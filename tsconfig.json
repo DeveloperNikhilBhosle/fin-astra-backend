@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "resolveJsonModule": true,
+    "paths":{
+      "@app/*": ["src/*"],
+      "@app/lib/modules": ["src/lib/index"],
+      "@app/aws/config": ["src/S3_AWS_Services/aws-s3.config"],
+      "@app/shared/utils/color": ["src/lib/shared/utils/color.enum"],
+      "@app/shared/helpers": ["src/lib/shared/helper/index"],
+    }
+  }
+}
