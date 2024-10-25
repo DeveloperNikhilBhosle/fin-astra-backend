@@ -10,7 +10,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { FwpLatestService } from './services/index';
-import { FwpDto } from './fwp-latest.dto';
+// import { FwpDto } from './fwp-latest.dto';
 import { Response } from 'express';
 import { Readable } from 'stream';
 import { ApiTags } from '@nestjs/swagger';
@@ -24,7 +24,7 @@ export class FwpLatestController {
   ) { }
 
   @Get('pdf')
-  async generatePdf(@Body() jsondata: FwpDto, @Res() res: Response) {
+  async generatePdf(@Body() jsondata: any, @Res() res: Response) {
     try {
       if (Object.keys(jsondata).length === 0) {
         res.status(HttpStatus.BAD_REQUEST).send({

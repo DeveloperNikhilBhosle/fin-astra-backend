@@ -15,6 +15,7 @@ const fs = require('fs');
 import { ColorEnum } from '@app/shared/utils/color';
 import { FwpLatestAnalysisConst } from '../fwp-latest.constants';
 import { FWPHelper } from '@app/shared/helpers';
+import { title } from 'process';
 
 const cwd = process.cwd();
 @Injectable()
@@ -304,7 +305,7 @@ export class FwpLatestService {
 
   oneView(pdf: PDFKit.PDFDocument, jsondata: any) {
     try {
-      const assets = jsondata?.oneview?.assets || [];
+      const investments = jsondata?.investments || [];
 
       pdf.addPage();
       pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
@@ -336,7 +337,7 @@ export class FwpLatestService {
           this.px2MM(120),
           this.px2MM(204),
           this.px2MM(527),
-          this.px2MM(520),
+          this.px2MM(160 + 70 * Object.keys(investments).length),
         )
         .fill();
 
@@ -359,12 +360,16 @@ export class FwpLatestService {
         .font('LeagueSpartan-Regular')
         .fontSize(this.px2MM(40))
         .fillColor(this.hex2RGB('#000000'))
-        .text('Assets', this.px2MM(240), this.px2MM(254), {
-          width: this.px2MM(105),
+        .text('Investments', this.px2MM(240), this.px2MM(254), {
+          width: this.px2MM(250),
           height: this.px2MM(56),
           align: 'left',
         });
 
+      const total_investments = jsondata?.investments?.reduce((acc, curr) => {
+        return acc + parseFloat(curr.value);
+      }
+        , 0);
       pdf
         .font('LeagueSpartan-SemiBold')
         .fontSize(this.px2MM(30))
@@ -372,44 +377,44 @@ export class FwpLatestService {
         .text(
           '₹ ' +
           this.format_cash2(
-            parseFloat(jsondata['oneview']['total']['assets']),
+            parseFloat(total_investments),
           ),
-          this.px2MM(395),
+          this.px2MM(500),
           this.px2MM(259),
           { width: this.px2MM(105), height: this.px2MM(42), align: 'left' },
         );
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
-        .text(
-          '₹ ' +
-          this.format_cash2(
-            parseFloat(jsondata['oneview']['total']['assets']),
-          ),
-          this.px2MM(500),
-          this.px2MM(262),
-          { width: this.px2MM(80), height: this.px2MM(42), align: 'left' },
-        );
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'ArrowUp.png',
-        ),
-        this.px2MM(575),
-        this.px2MM(258),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
+      // pdf
+      //   .font('LeagueSpartan-SemiBold')
+      //   .fontSize(this.px2MM(24))
+      //   .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
+      //   .text(
+      //     '₹ ' +
+      //     this.format_cash2(
+      //       parseFloat(jsondata['oneview']['total']['assets']),
+      //     ),
+      //     this.px2MM(500),
+      //     this.px2MM(262),
+      //     { width: this.px2MM(80), height: this.px2MM(42), align: 'left' },
+      //   );
+      // pdf.image(
+      //   path.join(
+      //     cwd,
+      //     'src',
+      //     'lib',
+      //     'shared',
+      //     'assets',
+      //     'images',
+      //     'icons',
+      //     'ArrowUp.png',
+      //   ),
+      //   this.px2MM(575),
+      //   this.px2MM(258),
+      //   { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
+      // );
 
       pdf.fillColor(this.hex2RGB('#000000'));
 
-      for (let rows = 0; rows < Object.keys(assets).length; rows++) {
+      for (let rows = 0; rows < Object.keys(investments).length; rows++) {
         // pdf.lineWidth(this.px2MM(0.1))
         //     .fillColor(this.hex2RGB('#FFFFFF'))
         // pdf.rect(this.px2MM(160), this.px2MM(324 + (rows * 72)), this.px2MM(290), this.px2MM(72)).fill();
@@ -446,7 +451,7 @@ export class FwpLatestService {
           .fontSize(this.px2MM(24))
           .fillColor(this.hex2RGB('#000000'))
           .text(
-            assets[rows]['title'],
+            investments[rows]['title'],
             this.px2MM(180),
             this.px2MM(344 + rows * 72),
             { width: this.px2MM(250), height: this.px2MM(32), align: 'left' },
@@ -462,15 +467,15 @@ export class FwpLatestService {
           )
           .stroke();
 
-        if (assets[rows]['value'] == ' ' || assets[rows]['value'] == '') {
+        if (investments[rows]['value'] == ' ' || investments[rows]['value'] == '') {
           pdf.text('-', this.px2MM(470), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
             height: this.px2MM(25),
             align: 'right',
           });
         } else if (
-          assets[rows]['value'] == ' ' ||
-          assets[rows]['value'] == ''
+          investments[rows]['value'] == ' ' ||
+          investments[rows]['value'] == ''
         ) {
           pdf.text('-', this.px2MM(470), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
@@ -479,33 +484,41 @@ export class FwpLatestService {
           });
         } else {
           const val_x = 455;
-          const val = this.format_cash2(parseFloat(assets[rows]['value']));
+          const val = this.format_cash2(parseFloat(investments[rows]['value']));
           pdf.text(`₹ ${val}`, this.px2MM(val_x), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
             height: this.px2MM(25),
             align: 'right',
           });
-          pdf.image(
-            path.join(
-              cwd,
-              'src',
-              'lib',
-              'shared',
-              'assets',
-              'images',
-              'icons',
-              'ArrowUp.png',
-            ),
-            this.px2MM(val_x + 115),
-            this.px2MM(342 + rows * 72),
-            { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-          );
+          // pdf.image(
+          //   path.join(
+          //     cwd,
+          //     'src',
+          //     'lib',
+          //     'shared',
+          //     'assets',
+          //     'images',
+          //     'icons',
+          //     'ArrowUp.png',
+          //   ),
+          //   this.px2MM(val_x + 115),
+          //   this.px2MM(342 + rows * 72),
+          //   { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
+          // );
         }
       }
 
       //card 2
 
-      const liabilities = jsondata?.oneview?.liabilities || [];
+      const insurances = [{
+        title: 'self',
+        value: jsondata?.insurance?.self || 0
+      },
+      {
+        title: 'parents',
+        value: jsondata?.insurance?.parents || 0
+      }
+      ];
 
       pdf
         .fillColor(this.hex2RGB('#FFF3DB'))
@@ -536,59 +549,16 @@ export class FwpLatestService {
         .font('LeagueSpartan-Regular')
         .fontSize(this.px2MM(40))
         .fillColor(this.hex2RGB('#000000'))
-        .text('Liabilities', this.px2MM(816), this.px2MM(254), {
+        .text('Insurances', this.px2MM(816), this.px2MM(254), {
           width: this.px2MM(244),
           height: this.px2MM(56),
           align: 'left',
         });
 
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(30))
-        .fillColor(this.hex2RGB('#000000'))
-        .text(
-          '₹ ' +
-          this.format_cash2(
-            parseFloat(jsondata['oneview']['total']['liabilities']),
-          ),
-          this.px2MM(985),
-          this.px2MM(259),
-          { width: this.px2MM(105), height: this.px2MM(42), align: 'left' },
-        );
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
-        .text(
-          '₹ ' +
-          this.format_cash2(
-            //TODO : change this to correct value
-            parseFloat(jsondata['oneview']['total']['liabilities']),
-          ),
-          this.px2MM(1075),
-          this.px2MM(262),
-          { width: this.px2MM(80), height: this.px2MM(42), align: 'right' },
-        );
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'ArrowUp.png',
-        ),
-        this.px2MM(1153),
-        this.px2MM(259),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
 
       pdf.fillColor(this.hex2RGB('#000000'));
 
-      for (let rows = 0; rows < Object.keys(liabilities).length; rows++) {
+      for (let rows = 0; rows < Object.keys(insurances).length; rows++) {
         pdf
           .fillColor(this.hex2RGB('#FFFFFF'))
           .rect(
@@ -622,7 +592,7 @@ export class FwpLatestService {
           .fontSize(this.px2MM(24))
           .fillColor(this.hex2RGB('#000000'))
           .text(
-            liabilities[rows]['title'],
+            insurances[rows]['title'],
             this.px2MM(756),
             this.px2MM(344 + rows * 72),
             { width: this.px2MM(250), height: this.px2MM(32), align: 'left' },
@@ -639,8 +609,8 @@ export class FwpLatestService {
           .stroke();
 
         if (
-          liabilities[rows]['value'] == ' ' ||
-          liabilities[rows]['value'] == ''
+          insurances[rows]['value'] == ' ' ||
+          insurances[rows]['value'] == ''
         ) {
           pdf.text('-', this.px2MM(1046), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
@@ -648,8 +618,8 @@ export class FwpLatestService {
             align: 'right',
           });
         } else if (
-          liabilities[rows]['value'] == ' ' ||
-          liabilities[rows]['value'] == ''
+          insurances[rows]['value'] == ' ' ||
+          insurances[rows]['value'] == ''
         ) {
           pdf.text('-', this.px2MM(1046), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
@@ -658,34 +628,27 @@ export class FwpLatestService {
           });
         } else {
           const val_x = 1031;
-          const val = this.format_cash2(parseFloat(liabilities[rows]['value']));
+          const val = this.format_cash2(parseFloat(insurances[rows]['value']));
           pdf.text(`₹ ${val}`, this.px2MM(val_x), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
             height: this.px2MM(25),
             align: 'right',
           });
-
-          pdf.image(
-            path.join(
-              cwd,
-              'src',
-              'lib',
-              'shared',
-              'assets',
-              'images',
-              'icons',
-              'ArrowUp.png',
-            ),
-            this.px2MM(val_x + 115),
-            this.px2MM(342 + rows * 72),
-            { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-          );
         }
       }
 
       //card 3
 
-      const income = jsondata?.oneview?.income || [];
+      const HRA = [{
+        title: 'Actual HRA',
+        value: jsondata?.hra?.actual_hra || 0
+      },
+      {
+        title: 'Deduction Allowed',
+        value: jsondata?.hra?.deduction_allowed || 0
+      }
+
+      ]
 
       pdf
         .fillColor(this.hex2RGB('#DEEDFF'))
@@ -717,59 +680,15 @@ export class FwpLatestService {
         .font('LeagueSpartan-Regular')
         .fontSize(this.px2MM(40))
         .fillColor(this.hex2RGB('#000000'))
-        .text('Income', this.px2MM(816), this.px2MM(608), {
+        .text('HRA', this.px2MM(816), this.px2MM(608), {
           width: this.px2MM(155),
           height: this.px2MM(56),
           align: 'left',
         });
 
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(30))
-        .fillColor(this.hex2RGB('#000000'))
-        .text(
-          '₹ ' +
-          this.format_cash2(
-            parseFloat(jsondata['oneview']['total']['income']),
-          ),
-          this.px2MM(970),
-          this.px2MM(613),
-          { width: this.px2MM(105), height: this.px2MM(42), align: 'left' },
-        );
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
-        .text(
-          '₹ ' +
-          this.format_cash2(
-            //TODO : change this to correct value
-            parseFloat(jsondata['oneview']['total']['income']),
-          ),
-          this.px2MM(1075),
-          this.px2MM(616),
-          { width: this.px2MM(80), height: this.px2MM(42), align: 'left' },
-        );
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'ArrowUp.png',
-        ),
-        this.px2MM(1150),
-        this.px2MM(613),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
-
       pdf.fillColor(this.hex2RGB('#000000'));
 
-      for (let rows = 0; rows < Object.keys(income).length; rows++) {
+      for (let rows = 0; rows < Object.keys(HRA).length; rows++) {
         pdf
           .fillColor(this.hex2RGB('#FFFFFF'))
           .rect(
@@ -803,7 +722,7 @@ export class FwpLatestService {
           .fontSize(this.px2MM(24))
           .fillColor(this.hex2RGB('#000000'))
           .text(
-            income[rows]['title'],
+            HRA[rows]['title'],
             this.px2MM(756),
             this.px2MM(702 + rows * 72),
             { width: this.px2MM(250), height: this.px2MM(32), align: 'left' },
@@ -819,15 +738,15 @@ export class FwpLatestService {
           )
           .stroke();
 
-        if (income[rows]['value'] == ' ' || income[rows]['value'] == '') {
+        if (HRA[rows]['value'] == ' ' || HRA[rows]['value'] == '') {
           pdf.text('-', this.px2MM(1046), this.px2MM(702 + rows * 72), {
             width: this.px2MM(117),
             height: this.px2MM(25),
             align: 'right',
           });
         } else if (
-          income[rows]['value'] == ' ' ||
-          income[rows]['value'] == ''
+          HRA[rows]['value'] == ' ' ||
+          HRA[rows]['value'] == ''
         ) {
           pdf.text('-', this.px2MM(1046), this.px2MM(702 + rows * 72), {
             width: this.px2MM(117),
@@ -836,34 +755,34 @@ export class FwpLatestService {
           });
         } else {
           const val_x = 1031;
-          const val = this.format_cash2(parseFloat(income[rows]['value']));
+          const val = this.format_cash2(parseFloat(HRA[rows]['value']));
           pdf.text(`₹ ${val}`, this.px2MM(val_x), this.px2MM(702 + rows * 72), {
             width: this.px2MM(117),
             height: this.px2MM(25),
             align: 'right',
           });
 
-          pdf.image(
-            path.join(
-              cwd,
-              'src',
-              'lib',
-              'shared',
-              'assets',
-              'images',
-              'icons',
-              'ArrowUp.png',
-            ),
-            this.px2MM(val_x + 115),
-            this.px2MM(701 + rows * 72),
-            { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-          );
+          // pdf.image(
+          //   path.join(
+          //     cwd,
+          //     'src',
+          //     'lib',
+          //     'shared',
+          //     'assets',
+          //     'images',
+          //     'icons',
+          //     'ArrowUp.png',
+          //   ),
+          //   this.px2MM(val_x + 115),
+          //   this.px2MM(701 + rows * 72),
+          //   { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
+          // );
         }
       }
 
       ///card 4
 
-      const insurance = jsondata?.oneview?.insurance || [];
+      const other = jsondata?.other || [];
 
       pdf
         .fillColor(this.hex2RGB('#FFE7CC'))
@@ -871,7 +790,7 @@ export class FwpLatestService {
           this.px2MM(1273),
           this.px2MM(204),
           this.px2MM(527),
-          this.px2MM(304),
+          this.px2MM(160 + 70 * Object.keys(other).length),
         )
         .fill();
 
@@ -894,7 +813,7 @@ export class FwpLatestService {
         .font('LeagueSpartan-Regular')
         .fontSize(this.px2MM(40))
         .fillColor(this.hex2RGB('#000000'))
-        .text('Insurance', this.px2MM(1393), this.px2MM(254), {
+        .text('Others', this.px2MM(1393), this.px2MM(254), {
           width: this.px2MM(158),
           height: this.px2MM(56),
           align: 'left',
@@ -902,7 +821,7 @@ export class FwpLatestService {
 
       pdf.fillColor(this.hex2RGB('#000000'));
 
-      for (let rows = 0; rows < Object.keys(insurance).length; rows++) {
+      for (let rows = 0; rows < Object.keys(other).length; rows++) {
         pdf
           .fillColor(this.hex2RGB('#FFFFFF'))
           .rect(
@@ -936,7 +855,7 @@ export class FwpLatestService {
           .fontSize(this.px2MM(24))
           .fillColor(this.hex2RGB('#000000'))
           .text(
-            insurance[rows]['title'],
+            other[rows]['title'],
             this.px2MM(1333),
             this.px2MM(344 + rows * 72),
             { width: this.px2MM(250), height: this.px2MM(32), align: 'left' },
@@ -952,15 +871,15 @@ export class FwpLatestService {
           )
           .stroke();
 
-        if (insurance[rows]['value'] == ' ' || insurance[rows]['value'] == '') {
+        if (other[rows]['value'] == ' ' || other[rows]['value'] == '') {
           pdf.text('-', this.px2MM(1623), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
             height: this.px2MM(25),
             align: 'right',
           });
         } else if (
-          insurance[rows]['value'] == ' ' ||
-          insurance[rows]['value'] == ''
+          other[rows]['value'] == ' ' ||
+          other[rows]['value'] == ''
         ) {
           pdf.text('-', this.px2MM(1623), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
@@ -969,219 +888,15 @@ export class FwpLatestService {
           });
         } else {
           const val_x = 1608;
-          const val = this.format_cash2(parseFloat(insurance[rows]['value']));
+          const val = this.format_cash2(parseFloat(other[rows]['value']));
           pdf.text(`₹ ${val}`, this.px2MM(val_x), this.px2MM(344 + rows * 72), {
             width: this.px2MM(117),
             height: this.px2MM(25),
             align: 'right',
           });
-          pdf.image(
-            path.join(
-              cwd,
-              'src',
-              'lib',
-              'shared',
-              'assets',
-              'images',
-              'icons',
-              'ArrowUp.png',
-            ),
-            this.px2MM(val_x + 115),
-            this.px2MM(342 + rows * 72),
-            { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-          );
+
         }
       }
-
-      //card 5
-
-      const expense = jsondata?.oneview?.expense || [];
-
-      pdf
-        .fillColor(this.hex2RGB('#FFDDDA'))
-        .rect(
-          this.px2MM(1273),
-          this.px2MM(558),
-          this.px2MM(527),
-          this.px2MM(304),
-        )
-        .fill();
-
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'Expense.png',
-        ),
-        this.px2MM(1313),
-        this.px2MM(598),
-        { width: this.px2MM(60), height: this.px2MM(60) },
-      );
-
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(40))
-        .fillColor(this.hex2RGB('#000000'))
-        .text('Expenses', this.px2MM(1393), this.px2MM(608), {
-          width: this.px2MM(155),
-          height: this.px2MM(56),
-          align: 'left',
-        });
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(30))
-        .fillColor(this.hex2RGB('#000000'))
-        .text(
-          '₹ ' +
-          this.format_cash2(
-            parseFloat(jsondata['oneview']['total']['expense']),
-          ),
-          this.px2MM(1562),
-          this.px2MM(613),
-          { width: this.px2MM(105), height: this.px2MM(42), align: 'right' },
-        );
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
-        .text(
-          '₹ ' +
-          this.format_cash2(
-            parseFloat(jsondata['oneview']['total']['expense']),
-          ),
-          this.px2MM(1667),
-          this.px2MM(616),
-          { width: this.px2MM(80), height: this.px2MM(42), align: 'right' },
-        );
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'ArrowUp.png',
-        ),
-        this.px2MM(1742),
-        this.px2MM(613),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
-
-      pdf.fillColor(this.hex2RGB('#000000'));
-
-      for (let rows = 0; rows < Object.keys(expense).length; rows++) {
-        pdf
-          .fillColor(this.hex2RGB('#FFFFFF'))
-          .rect(
-            this.px2MM(1313),
-            this.px2MM(678 + rows * 72),
-            this.px2MM(290),
-            this.px2MM(72),
-          )
-          .fill();
-        pdf
-          .lineWidth(this.px2MM(1))
-          .strokeColor(this.hex2RGB('#E9EAEE'))
-          .rect(
-            this.px2MM(1313),
-            this.px2MM(678 + rows * 72),
-            this.px2MM(290),
-            this.px2MM(72),
-          )
-          .stroke();
-
-        pdf
-          .rect(
-            this.px2MM(1603),
-            this.px2MM(678 + rows * 72),
-            this.px2MM(157),
-            this.px2MM(72),
-          )
-          .fill();
-        pdf
-          .lineWidth(this.px2MM(1))
-          .strokeColor(this.hex2RGB('#E9EAEE'))
-          .rect(
-            this.px2MM(1603),
-            this.px2MM(678 + rows * 72),
-            this.px2MM(157),
-            this.px2MM(72),
-          )
-          .stroke();
-
-        pdf
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(24))
-          .fillColor(this.hex2RGB('#000000'))
-          .text(
-            expense[rows]['title'],
-            this.px2MM(1333),
-            this.px2MM(702 + rows * 72),
-            { width: this.px2MM(250), height: this.px2MM(32), align: 'left' },
-          );
-
-        if (expense[rows]['value'] == ' ' || expense[rows]['value'] == '') {
-          pdf.text('-', this.px2MM(1623), this.px2MM(702 + rows * 72), {
-            width: this.px2MM(117),
-            height: this.px2MM(25),
-            align: 'right',
-          });
-        } else if (
-          expense[rows]['value'] == ' ' ||
-          expense[rows]['value'] == ''
-        ) {
-          pdf.text('-', this.px2MM(1623), this.px2MM(702 + rows * 72), {
-            width: this.px2MM(117),
-            height: this.px2MM(25),
-            align: 'right',
-          });
-        } else {
-          const val_x = 1608;
-          const val = this.format_cash2(parseFloat(expense[rows]['value']));
-          pdf.text(`₹ ${val}`, this.px2MM(val_x), this.px2MM(702 + rows * 72), {
-            width: this.px2MM(117),
-            height: this.px2MM(25),
-            align: 'right',
-          });
-          pdf.image(
-            path.join(
-              cwd,
-              'src',
-              'lib',
-              'shared',
-              'assets',
-              'images',
-              'icons',
-              'ArrowUp.png',
-            ),
-            this.px2MM(val_x + 115),
-            this.px2MM(701 + rows * 72),
-            { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-          );
-        }
-      }
-
-      const disclaimer =
-        'Disclaimer: The accuracy and comprehensiveness of this information is dependent on the details provided to us. The more accurate the information, the better our financial suggestions will be.';
-      pdf.fillColor(this.hex2RGB('#ffffff'));
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .text(disclaimer, this.px2MM(440), this.px2MM(976), {
-          width: this.px2MM(1110),
-          height: this.px2MM(64),
-          lineGap: this.px2MM(4),
-          align: 'center',
-        });
 
       //index
       this.index_text(pdf, '#FFFFFF');
@@ -1190,6 +905,7 @@ export class FwpLatestService {
       Logger.error(err);
     }
   }
+
 
   async generatePieChart(labels, data, colors) {
     try {
@@ -1276,1383 +992,1930 @@ export class FwpLatestService {
     }
   }
 
-
-  async networthLinegraph(years, networth, cnwt) {
+  async assetsChart(pdf: PDFKit.PDFDocument, jsondata: any) {
     try {
-      const width = 606;
-      const height = 335;
-
-      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
-      const configuration = {
-        type: 'line',
-        data: {
-          labels: years,
-          datasets: [
-            {
-              data: [cnwt[0]],
-              borderColor: 'black',
-              borderWidth: 1,
-              pointRadius: 8,
-              fill: false,
-              borderSkipped: 'bottom',
-            },
-            {
-              data: [cnwt[0]],
-              pointRadius: 4,
-              pointBackgroundColor: 'black',
-              fill: false,
-              borderSkipped: 'bottom',
-            },
-            {
-              data: cnwt,
-              backgroundColor: 'rgba(255, 212, 203, 0.5)',
-              borderColor: '#FF7051',
-              borderWidth: 1,
-              pointRadius: 0,
-              fill: true,
-              borderSkipped: 'bottom',
-            },
-            {
-              data: networth,
-              backgroundColor: 'rgba(212, 255, 237, 0.5)',
-              borderColor: '#43D195',
-              borderWidth: 1,
-              pointRadius: 0,
-              fill: true,
-              borderSkipped: 'bottom',
-            },
-          ],
-        },
-
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              beginAtZero: true,
-              ticks: {
-                autoSkip: true,
-                maxTicksLimit: 10,
-                maxRotation: 0,
-                minRotation: 0,
-              },
-              grid: {
-                color: 'rgba(243, 246, 249, 0.1)',
-              },
-            },
-            y: {
-              beginAtZero: true,
-              ticks: {
-                // callback: function (value, index, values) {
-                //   // Show only every nth label
-                //   return index % Math.ceil(values.length / 7) === 0 ? `₹ ${value} Cr ` : '';
-                // },
-                callback: (value) => `₹ ${value} Cr`,
-                autoSkip: true,
-                maxTicksLimit: 8,
-              },
-              grid: {
-                color: 'rgba(243, 246, 249, 0.1)',
-              },
-            },
-          },
-          plugins: {
-            legend: {
-              display: false,
-            },
-          },
-        },
-      };
-      const image = await chartJSNodeCanvas.renderToDataURL(configuration);
-
-      return image;
-    } catch (err) {
-      Logger.error(err);
-    }
-  }
-
-  async netWorth(pdf: PDFKit.PDFDocument, jsondata: any) {
-    try {
-      const net_worth_projection = jsondata?.networth;
-
-      pdf.addPage();
-      pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
-      pdf.scale(this.scale_pdf() || 1.6572658674215652);
-      pdf
-        .fillColor(this.hex2RGB('#FCF8ED'))
-        .rect(0, 0, this.px2MM(1920), this.px2MM(1080))
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .rect(0, this.px2MM(80), this.px2MM(15), this.px2MM(84))
-        .fill();
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(60))
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .text('Net Worth', this.px2MM(120), this.px2MM(92), {
-          width: this.px2MM(589),
-          height: this.px2MM(84),
-          align: 'left',
-        });
-
-      this.index_text(pdf, '#1A1A1D');
-      let chart_main_box_x = 120;
-      let chart_main_box_y = 204;
-      let chart_main_box_width = 812;
-      let chart_main_box_height = 389;
-
-      pdf.fillColor(this.hex2RGB('#ffffff'));
-      pdf
-        .rect(
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y),
-          this.px2MM(chart_main_box_width),
-          this.px2MM(chart_main_box_height),
-        )
-        .fill();
-
-      pdf.fillColor(this.hex2RGB('#65676D'));
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(40))
-        .text(
-          'Net Worth',
-          this.px2MM(chart_main_box_x + 60),
-          this.px2MM(chart_main_box_y + 122),
-          { width: this.px2MM(315), height: this.px2MM(57), align: 'left' },
-        );
-      const net_worth = jsondata?.networth;
-
-      const total_assets = `₹ ${this.format_cash2(
-        parseFloat(net_worth?.assets),
-      )}`;
-      pdf.fillColor(this.hex2RGB('#000000'));
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(72))
-        .text(
-          `${total_assets}`,
-          this.px2MM(chart_main_box_x + 60),
-          this.px2MM(chart_main_box_y + 202),
-          { width: this.px2MM(280), height: this.px2MM(68), align: 'left' },
-        );
-      let Ind_width = 60;
-      let Ind_height = 55;
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'ArrowUp.png',
-        ),
-        this.px2MM(chart_main_box_x + 290),
-        this.px2MM(chart_main_box_y + 212),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
-
-      pdf.fillColor(this.hex2RGB('#B9BABE'));
-      pdf
-        .rect(
-          this.px2MM(chart_main_box_x + 395),
-          this.px2MM(chart_main_box_y + 75),
-          this.px2MM(1),
-          this.px2MM(237),
-        )
-        .fill();
-
-      Ind_width = 22;
-      Ind_height = 30;
-      pdf.fillColor(this.hex2RGB('#898B90'));
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(30))
-        .text(
-          'Total Assets',
-          this.px2MM(chart_main_box_x + 415),
-          this.px2MM(chart_main_box_y + 75),
-          { width: this.px2MM(315), height: this.px2MM(42), align: 'left' },
-        );
-      pdf
-        .fillColor(this.hex2RGB('#898B90'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(35))
-        .text(
-          `${total_assets}`,
-          this.px2MM(chart_main_box_x + 415),
-          this.px2MM(chart_main_box_y + 128),
-          { width: this.px2MM(315), height: this.px2MM(54), align: 'left' },
-        );
-      let IndicatorColor = ColorEnum.INDICATOR_UP;
-      pdf
-        .fillColor(this.hex2RGB(IndicatorColor))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        //TODO: Change this to correct value
-        .text(
-          `${total_assets}`,
-          this.px2MM(chart_main_box_x + 551),
-          this.px2MM(chart_main_box_y + 132),
-          { width: this.px2MM(100), height: this.px2MM(54), align: 'left' },
-        );
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'ArrowUp.png',
-        ),
-        this.px2MM(chart_main_box_x + 630),
-        this.px2MM(chart_main_box_y + 129),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
-
-      pdf.fillColor(this.hex2RGB('#898B90'));
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(30))
-        .text(
-          'Total Liabilities',
-          this.px2MM(chart_main_box_x + 415),
-          this.px2MM(chart_main_box_y + 220),
-          { width: this.px2MM(315), height: this.px2MM(42), align: 'left' },
-        );
-      pdf
-        .fillColor(this.hex2RGB('#898B90'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(35))
-        .text(
-          `${total_assets}`,
-          this.px2MM(chart_main_box_x + 415),
-          this.px2MM(chart_main_box_y + 272),
-          { width: this.px2MM(315), height: this.px2MM(54), align: 'left' },
-        );
-      IndicatorColor = ColorEnum.INDICATOR_UP;
-      pdf
-        .fillColor(this.hex2RGB(IndicatorColor))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        //TODO: Change this to correct value
-        .text(
-          `${total_assets}`,
-          this.px2MM(chart_main_box_x + 551),
-          this.px2MM(chart_main_box_y + 277),
-          { width: this.px2MM(100), height: this.px2MM(54), align: 'left' },
-        );
-
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'ArrowUp.png',
-        ),
-        this.px2MM(chart_main_box_x + 630),
-        this.px2MM(chart_main_box_y + 274),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
-
-      chart_main_box_x = 120;
-      chart_main_box_y = 204 + chart_main_box_height;
-      chart_main_box_width = 812;
-      chart_main_box_height = 96;
-
-      pdf.fillColor(this.hex2RGB('#D4FFED'));
-      pdf
-        .rect(
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y),
-          this.px2MM(chart_main_box_width),
-          this.px2MM(chart_main_box_height),
-        )
-        .fill();
-
-      pdf.fillColor(this.hex2RGB('#000000'));
-      pdf
-        .font('LeagueSpartan-Light')
-        .fontSize(this.px2MM(30))
-        .text(
-          'Currently your Net Worth has increased by ',
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y + 30),
-          {
-            width: this.px2MM(chart_main_box_width - 100),
-            height: this.px2MM(42),
-            align: 'center',
-          },
-        );
-      pdf
-        .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(40))
-        //TODO: Change this to correct value
-        .text(
-          '15%',
-          this.px2MM(chart_main_box_x + 625),
-          this.px2MM(chart_main_box_y + 27),
-          { width: this.px2MM(100), height: this.px2MM(54), align: 'left' },
-        );
-
-      chart_main_box_x = 120;
-      chart_main_box_y = chart_main_box_y + chart_main_box_height + 50;
-      chart_main_box_width = 812;
-      chart_main_box_height = 228;
-
-      pdf.fillColor(this.hex2RGB('#ffffff'));
-      pdf
-        .rect(
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y),
-          this.px2MM(chart_main_box_width),
-          this.px2MM(chart_main_box_height),
-        )
-        .fill();
-
-      pdf.fillColor(this.hex2RGB('#000000'));
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(40))
-        .text(
-          `Value Under Advisory: ₹ ${'000Cr'} `,
-          this.px2MM(chart_main_box_x + 75),
-          this.px2MM(chart_main_box_y + 60),
-          {
-            width: this.px2MM(660),
-            height: this.px2MM(42),
-            align: 'left',
-            continued: true,
-          },
-        )
-        .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(28))
-        //TODO: Change this to correct value
-        .text(
-          `₹ ${this.format_cash2(parseFloat('1588989'))}`,
-          this.px2MM(chart_main_box_x + 75),
-          this.px2MM(chart_main_box_y + 68),
-          { height: this.px2MM(54), align: 'right', continued: false },
-        );
-      Ind_width = 60;
-      Ind_height = 52;
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          'ArrowUp.png',
-        ),
-        this.px2MM(chart_main_box_x + 695),
-        this.px2MM(chart_main_box_y + 56),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
-      pdf
-        .fillColor(this.hex2RGB('#4B4C51'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .text(
-          `Value Under Advisory = Assets + Liabilities`,
-          this.px2MM(chart_main_box_x + 92.5),
-          this.px2MM(chart_main_box_y + 136),
-          { width: this.px2MM(627), height: this.px2MM(30), align: 'center' },
-        );
-
-      chart_main_box_x = 992;
-      chart_main_box_y = 204;
-      chart_main_box_width = 808;
-      chart_main_box_height = 762;
-
-      pdf.fillColor(this.hex2RGB('#ffffff'));
-      pdf
-        .rect(
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y),
-          this.px2MM(chart_main_box_width),
-          this.px2MM(chart_main_box_height),
-        )
-        .fill();
-
-      const years = jsondata?.networth?.networth_projection?.table.map(
-        (item) => item.year,
-      );
-
-      const networth = jsondata?.networth?.networth_projection?.table.map(
-        (item) => item.nwtet,
-      );
-      const cnwt = jsondata?.networth?.networth_projection?.table.map(
-        (item) => item.cnwt,
-      );
-
-      const chartImage = await this.networthLinegraph(years, networth, cnwt);
-
-      pdf.image(
-        chartImage,
-        this.px2MM(chart_main_box_x + 40),
-        this.px2MM(chart_main_box_y + 40),
-        {
-          width: this.px2MM(chart_main_box_width - 94),
-          height: this.px2MM(364),
-        },
-      );
-
-      pdf
-        .fillColor(this.hex2RGB('#FF7051'))
-        .rect(
-          this.px2MM(chart_main_box_x + 50),
-          this.px2MM(chart_main_box_y + 450),
-          this.px2MM(12),
-          this.px2MM(12),
-        )
-        .fill();
-
-      pdf.fillColor(this.hex2RGB('#000000'));
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Current Net Worth Trajectory (CNWT)',
-          this.px2MM(chart_main_box_x + 77),
-          this.px2MM(chart_main_box_y + 444),
-          { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
-        );
-
-      const maxCurr_cnwt = this.format_cash2(
-        net_worth_projection?.networth_projection['retirement_cnwt'],
-      );
-      const mnth_cnwt =
-        net_worth_projection?.networth_projection?.retirement_month_year
-          ?.split(' ')[0]
-          .toUpperCase()
-          .slice(0, 3) +
-        `'${net_worth_projection?.networth_projection?.retirement_month_year?.split(
-          ' ',
-        )[1]
-        }' | ₹ ${maxCurr_cnwt}`;
-
-      pdf.fillColor(this.hex2RGB('#898B90'));
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .text(
-          mnth_cnwt,
-          this.px2MM(chart_main_box_x + 77),
-          this.px2MM(chart_main_box_y + 481),
-          { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
-        );
-
-      pdf.fillColor(this.hex2RGB('#000000'));
-      pdf
-        .font('LeagueSpartan-Light')
-        .fontSize(this.px2MM(18))
-        .text(
-          'Assumes that you maintain your current financial habits until retirement.',
-          this.px2MM(chart_main_box_x + 77),
-          this.px2MM(chart_main_box_y + 518),
-          { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
-        );
-
-      pdf
-        .fillColor(this.hex2RGB('#43D195'))
-        .rect(
-          this.px2MM(chart_main_box_x + 50),
-          this.px2MM(chart_main_box_y + 579),
-          this.px2MM(12),
-          this.px2MM(12),
-        )
-        .fill();
-
-      pdf.fillColor(this.hex2RGB('#000000'));
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Net worth Trajectory With Effective Planning (NWTEP)',
-          this.px2MM(chart_main_box_x + 77),
-          this.px2MM(chart_main_box_y + 573),
-          { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
-        );
-
-      pdf.fillColor(this.hex2RGB('#898B90'));
-      const maxCurr = this.format_cash2(
-        net_worth_projection?.networth_projection['retirement_nwtet'],
-      );
-      const mnth =
-        net_worth_projection?.networth_projection?.retirement_month_year
-          ?.split(' ')[0]
-          .toUpperCase()
-          .slice(0, 3) +
-        `'${net_worth_projection?.networth_projection?.retirement_month_year?.split(
-          ' ',
-        )[1]
-        }' | ₹ ${maxCurr}`;
-      // console.log(mnth);
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .text(
-          mnth,
-          this.px2MM(chart_main_box_x + 77),
-          this.px2MM(chart_main_box_y + 610),
-          { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
-        );
-
-      pdf.fillColor(this.hex2RGB('#000000'));
-      pdf
-        .font('LeagueSpartan-Light')
-        .fontSize(this.px2MM(18))
-        .text(
-          "Assumes that your finances are aligned with your personality by following the ideal guidance provided on the 'Your Financial Analysis' pages on the following aspects: expense and liability management, asset allocation, and emergency planning.",
-          this.px2MM(chart_main_box_x + 77),
-          this.px2MM(chart_main_box_y + 647),
-          {
-            width: this.px2MM(559),
-            lineGap: this.px2MM(4),
-            height: this.px2MM(100),
-            align: 'left',
-          },
-        );
-      // console.log(net_worth_projection)
-    } catch (err) {
-      Logger.error(err);
-    }
-  }
-
-  async liability_management(pdf: PDFKit.PDFDocument, jsondata: any) {
-    try {
-      const liability_management = jsondata?.liability_management;
-      const liability_management_table = liability_management?.table;
-      const liability_management_total = liability_management?.total;
-      const liability_management_comments = liability_management?.comments;
-
-      const credit_score_analysis =
-        jsondata?.bureau_report_summary?.credit_score_analysis;
-      const credit_score = credit_score_analysis?.score;
-      const credit_score_comments = credit_score_analysis?.commentary;
-
-      if (!liability_management_table) return;
-
-      pdf.addPage();
-      pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
-      pdf.scale(this.scale_pdf() || 1.6572658674215652);
-
-      pdf
-        .fillColor(this.hex2RGB('#FCF8ED'))
-        .rect(0, 0, this.px2MM(1920), this.px2MM(1080))
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .rect(0, this.px2MM(80), this.px2MM(15), this.px2MM(84))
-        .fill();
-
-      pdf
-
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(60))
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .text('Liability Management', this.px2MM(120), this.px2MM(92), {
-          width: this.px2MM(589),
-          height: this.px2MM(84),
-          align: 'left',
-        });
-
-      let lib_manag_main_box_x = 120;
-      let lib_manag_main_box_y = 228;
-
-      pdf
-        .fillColor(this.hex2RGB('#ffffff'))
-        .rect(
-          this.px2MM(lib_manag_main_box_x),
-          this.px2MM(lib_manag_main_box_y),
-          this.px2MM(416),
-          this.px2MM(542),
-        )
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Your Credit Score',
-          this.px2MM(lib_manag_main_box_x + 108),
-          this.px2MM(lib_manag_main_box_y + 32.5),
-          { width: this.px2MM(200), height: this.px2MM(32), align: 'center' },
-        );
-
-      let score_ind_img = 'bad_credit';
-      if (credit_score >= 800) {
-        score_ind_img = 'outstanding_credit';
-      } else if (credit_score > 665) {
-        score_ind_img = 'excellent_credit';
-      } else if (credit_score > 550) {
-        score_ind_img = 'good_credit';
-      } else if (credit_score > 360) {
-        score_ind_img = 'improve_credit';
-      } else {
-        score_ind_img = 'bad_credit';
+      const assets_table = [{
+        title: 'Salary',
+        value: Number(jsondata?.income_source?.salary) || 0
+      },
+      {
+        title: 'Bonus',
+        value: Number(jsondata?.income_source?.bonus) || 0
+      },
+      {
+        title: 'House Property',
+        value: Number(jsondata?.income_source?.house_property) || 0
+      },
+      {
+        title: 'Capital Gain',
+        value: Number(jsondata?.income_source?.capital_gain) || 0
+      },
+      {
+        title: 'Others',
+        value: Number(jsondata?.income_source?.other) || 0
       }
+      ];
+      const total_assets = assets_table.reduce((acc, curr) =>
+        acc + curr.value
+        , 0);
+      const assets_pie = [{
+        particular: 'Salary',
+        percentage: Number(jsondata?.income_source?.salary || '0') / total_assets * 100
+      },
+      {
+        particular: 'Bonus',
+        percentage: Number(jsondata?.income_source?.bonus || '0') / total_assets * 100
+      },
+      {
+        particular: 'House Property',
+        percentage: Number(jsondata?.income_source?.house_property || '0') / total_assets * 100
+      },
+      {
+        particular: 'Capital Gain',
+        percentage: Number(jsondata?.income_source?.capital_gain || '0') / total_assets * 100
+      },
+      {
+        particular: 'Others',
+        percentage: Number(jsondata?.income_source?.other || '0') / total_assets * 100
+      }]
 
-      pdf.image(
-        path.join(
-          cwd,
-          `src/lib/shared/assets/images/credit_score/${score_ind_img}.png`,
-        ),
-        this.px2MM(lib_manag_main_box_x + 40),
-        this.px2MM(lib_manag_main_box_y + 84.5),
-        { width: this.px2MM(336), height: this.px2MM(239) },
-      );
+      let colors = ['#A792FF', '#82DBC6', '#90BEF8', '#FFC27E', '#FFD976'];
+      let labels = [];
+      let data = [];
 
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(75))
-        .text(
-          `${credit_score}`,
-          this.px2MM(lib_manag_main_box_x + 128),
-          this.px2MM(lib_manag_main_box_y + 210.5),
-          { width: this.px2MM(160), height: this.px2MM(70), align: 'center' },
-        );
+      let total_Income =
+        assets_pie.forEach((element, index) => {
+          element['colors'] = colors[index];
+          labels.push(element['particular']);
+          data.push(element['percentage']);
+        });
+      const chartImage = await this.generatePieChart(labels, data, colors);
 
-      let changeScr = '5';
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        //TODO: Change this to correct value
-        .text(
-          `Increase in score - `,
-          this.px2MM(lib_manag_main_box_x + 40),
-          this.px2MM(lib_manag_main_box_y + 353.5),
-          {
-            width: this.px2MM(300),
-            height: this.px2MM(70),
-            align: 'center',
-            continued: true,
-          },
-        )
-        .font('LeagueSpartan-SemiBold')
-        .fillColor(this.hex2RGB('#26A670'))
-        .fontSize(this.px2MM(40))
-        .text(
-          `${changeScr}`,
-          this.px2MM(lib_manag_main_box_x + 67),
-          this.px2MM(lib_manag_main_box_y + 350),
-        );
+      let start = 0;
+      let stop = 8;
 
-      let Ind_x = lib_manag_main_box_x + 40 + 270;
-      Ind_x += changeScr.length >= 3 ? 30 : changeScr.length >= 2 ? 15 : 4;
-      let Ind_width = 35;
-      let Ind_height = 38;
-      //TODO: Change this condition from 0 to correct value
-      const Ind_dir = 0 ? 'ArrowDown.png' : 'ArrowUp.png';
-      pdf.image(
-        path.join(
-          cwd,
-          'src',
-          'lib',
-          'shared',
-          'assets',
-          'images',
-          'icons',
-          Ind_dir,
-        ),
-        this.px2MM(Ind_x),
-        this.px2MM(lib_manag_main_box_y + 352),
-        { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
-      );
+      for (let i = 0; i < Object.keys(assets_table).length; i += 8) {
+        pdf.addPage();
+        pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
+        pdf.scale(this.scale_pdf() || 1.6572658674215652);
 
-      let subtext_x = lib_manag_main_box_x + 40;
-      let subtext_y = lib_manag_main_box_y + 429;
-
-      pdf
-        .fillColor(this.hex2RGB('#F3F6F9'))
-        .rect(
-          this.px2MM(subtext_x),
-          this.px2MM(subtext_y),
-          this.px2MM(336),
-          this.px2MM(80),
-        )
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(14))
-        .text(
-          `${credit_score_comments}`,
-          this.px2MM(subtext_x + 20),
-          this.px2MM(subtext_y + 10),
-          {
-            width: this.px2MM(300),
-            height: this.px2MM(70),
-            align: 'left',
-            lineGap: this.px2MM(6),
-          },
-        );
-
-      let main_table_x = 591;
-      let main_table_y = 270;
-      let header_width = 192;
-      let header_h = 200;
-
-      ////Label
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .rect(
-          this.px2MM(main_table_x - 6),
-          this.px2MM(main_table_y - 42),
-          this.px2MM(230),
-          this.px2MM(42),
-        )
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Affordability Check',
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y - 42 + 9),
-          { width: this.px2MM(224), height: this.px2MM(42), align: 'center' },
-        );
-
-      // Header Liabilities Type
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .rect(
-          this.px2MM(main_table_x - 6),
-          this.px2MM(main_table_y),
-          this.px2MM(6),
-          this.px2MM(header_h),
-        )
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .lineWidth(0.5)
-        .strokeColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fillAndStroke();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Liability Type',
-          this.px2MM(main_table_x + 20),
-          this.px2MM(main_table_y + header_h / 2 - 12),
-          {
-            width: this.px2MM(header_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      main_table_x += header_width;
-      header_width = 508.5;
-      header_h = 100;
-
-      // Header
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .lineWidth(0.5)
-        .strokeColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fillAndStroke();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Current Liability Distribution',
-          this.px2MM(main_table_x + 20),
-          this.px2MM(main_table_y + header_h / 2 - 24),
-          {
-            width: this.px2MM(header_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      main_table_y += header_h;
-      header_width = 254.25;
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .lineWidth(0.5)
-        .strokeColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fillAndStroke();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Outstanding',
-          this.px2MM(main_table_x + 20),
-          this.px2MM(main_table_y + header_h / 2 - 24),
-          {
-            width: this.px2MM(header_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      main_table_x += header_width;
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .lineWidth(0.5)
-        .strokeColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fillAndStroke();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'EMI',
-          this.px2MM(main_table_x + 20),
-          this.px2MM(main_table_y + header_h / 2 - 24),
-          {
-            width: this.px2MM(header_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      main_table_y = 270;
-      main_table_x += header_width;
-      header_width = 508.5;
-
-      // Header  Suggested Range
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .lineWidth(0.5)
-        .strokeColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fillAndStroke();
-
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Suggested Range',
-          this.px2MM(main_table_x + 20),
-          this.px2MM(main_table_y + header_h / 2 - 24),
-          {
-            width: this.px2MM(header_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      main_table_y += header_h;
-      header_width = 254.25;
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .lineWidth(0.5)
-        .strokeColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fillAndStroke();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Loan Size',
-          this.px2MM(main_table_x + 20),
-          this.px2MM(main_table_y + header_h / 2 - 24),
-          {
-            width: this.px2MM(header_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      main_table_x += header_width;
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .lineWidth(0.5)
-        .strokeColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fillAndStroke();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .text(
-          'EMI',
-          this.px2MM(main_table_x + 20),
-          this.px2MM(main_table_y + header_h / 2 - 24),
-          {
-            width: this.px2MM(header_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      ///////Body of the table
-
-      let col_x = 591;
-      let col_y = 470;
-      let col_width = 192;
-      let col_height = 100;
-
-      for (let i = 0; i < liability_management_table.length; i++) {
-        col_x = 591;
-        col_width = 192;
-
-        const bg_color = i % 2 == 0 ? '#F3F6F9' : '#FFFFFF';
         pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .rect(
-            this.px2MM(col_x - 6),
-            this.px2MM(col_y),
-            this.px2MM(6),
-            this.px2MM(col_height),
-          )
+          .fillColor(this.hex2RGB('#FCF8ED'))
+          .rect(0, 0, this.px2MM(1920), this.px2MM(1080))
           .fill();
 
         pdf
-          .fillColor(this.hex2RGB(bg_color))
-          .lineWidth(0.5)
-          .strokeColor(this.hex2RGB('#E9EAEE'))
-          .rect(
-            this.px2MM(col_x),
-            this.px2MM(col_y),
-            this.px2MM(col_width),
-            this.px2MM(col_height),
-          )
-          .fillAndStroke();
-
-        pdf
           .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(24))
-          .text(
-            `${liability_management_table[i]['liability_type']}`,
-            this.px2MM(col_x + 20),
-            this.px2MM(col_y + col_height / 2 - 12),
-            {
-              width: this.px2MM(col_width - 40),
-              height: this.px2MM(32),
-              align: 'left',
-            },
-          );
-
-        col_x += col_width;
-        col_width = 254.25;
+          .rect(0, 0, this.px2MM(964), this.px2MM(1080))
+          .fill();
 
         pdf
-          .fillColor(this.hex2RGB(bg_color))
-          .lineWidth(0.5)
-          .strokeColor(this.hex2RGB('#E9EAEE'))
-          .rect(
-            this.px2MM(col_x),
-            this.px2MM(col_y),
-            this.px2MM(col_width),
-            this.px2MM(col_height),
-          )
-          .fillAndStroke();
-
-        const current_liability_distribution_outstanding_percentage =
-          this.format_cash2(
-            parseFloat(
-              liability_management_table[i][
-              'current_liability_distribution_outstanding_percentage'
-              ],
-            ),
-          );
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(24))
-          .text(
-            `₹${current_liability_distribution_outstanding_percentage}`,
-            this.px2MM(col_x + 20),
-            this.px2MM(col_y + col_height / 2 - 12),
-            {
-              width: this.px2MM(col_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        col_x += col_width;
-
-        pdf
-          .fillColor(this.hex2RGB(bg_color))
-          .lineWidth(0.5)
-          .strokeColor(this.hex2RGB('#E9EAEE'))
-          .rect(
-            this.px2MM(col_x),
-            this.px2MM(col_y),
-            this.px2MM(col_width),
-            this.px2MM(col_height),
-          )
-          .fillAndStroke();
-
-        const current_liability_distribution_emi_percentage = this.format_cash2(
-          parseFloat(
-            liability_management_table[i][
-            'current_liability_distribution_emi_percentage'
-            ],
-          ),
-        );
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(24))
-          .text(
-            `₹${current_liability_distribution_emi_percentage}`,
-            this.px2MM(col_x + 20),
-            this.px2MM(col_y + col_height / 2 - 12),
-            {
-              width: this.px2MM(col_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        col_x += col_width;
-
-        pdf
-          .fillColor(this.hex2RGB(bg_color))
-          .lineWidth(0.5)
-          .strokeColor(this.hex2RGB('#E9EAEE'))
-          .rect(
-            this.px2MM(col_x),
-            this.px2MM(col_y),
-            this.px2MM(col_width),
-            this.px2MM(col_height),
-          )
-          .fillAndStroke();
-
-        const suggested_loan_size_range = liability_management_table?.[i]?.[
-          'suggested_loan_size_range'
-        ]
-          .split('to')
-          .map((item) => `₹${this.format_cash2(parseFloat(item.trim()))}`)
-          .join(' to ');
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(24))
-          .text(
-            `${suggested_loan_size_range}`,
-            this.px2MM(col_x + 20),
-            this.px2MM(col_y + col_height / 2 - 12),
-            {
-              width: this.px2MM(col_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        col_x += col_width;
-
-        pdf
-          .fillColor(this.hex2RGB(bg_color))
-          .lineWidth(0.5)
-          .strokeColor(this.hex2RGB('#E9EAEE'))
-          .rect(
-            this.px2MM(col_x),
-            this.px2MM(col_y),
-            this.px2MM(col_width),
-            this.px2MM(col_height),
-          )
-          .fillAndStroke();
-
-        const suggested_emi_range = liability_management_table?.[i]?.[
-          'suggested_emi_range'
-        ]
-          .split('to')
-          .map((item) => `₹${this.format_cash2(parseFloat(item.trim()))}`)
-          .join(' to ');
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(24))
-          .text(
-            `${suggested_emi_range}`,
-
-            this.px2MM(col_x + 20),
-            this.px2MM(col_y + col_height / 2 - 12),
-            {
-              width: this.px2MM(col_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        col_y += col_height;
-      }
-
-      //////////////Total
-
-      col_x = 591;
-      col_width = 192;
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .rect(
-          this.px2MM(col_x - 6),
-          this.px2MM(col_y),
-          this.px2MM(6),
-          this.px2MM(col_height),
-        )
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .lineWidth(0.5)
-        .strokeColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(col_x),
-          this.px2MM(col_y),
-          this.px2MM(1209),
-          this.px2MM(col_height),
-        )
-        .fillAndStroke();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          `${liability_management_total['liability_type']}`,
-          this.px2MM(col_x + 20),
-          this.px2MM(col_y + col_height / 2 - 12),
-          {
-            width: this.px2MM(col_width - 40),
-            height: this.px2MM(32),
+          .font('LeagueSpartan-SemiBold')
+          .fontSize(this.px2MM(60))
+          .fillColor(this.hex2RGB('#ffffff'))
+          .text('Income Sources', this.px2MM(120), this.px2MM(92), {
+            width: this.px2MM(600),
+            height: this.px2MM(84),
             align: 'left',
-          },
-        );
+          });
 
-      col_x += col_width;
-      col_width = 254.25;
+        const now = new Date();
+        const day: string = now.getDate().toString();
+        const month: string = now.toLocaleString('default', { month: 'short' });
+        const year: string = now.getFullYear().toString();
 
-      const current_liability_distribution_outstanding_total =
-        this.format_cash2(
-          parseFloat(
-            liability_management_total[
-            'current_liability_distribution_outstanding_percentage'
-            ],
+        let suffix: string = '';
+
+        if (
+          (4 <= parseInt(day) && parseInt(day) <= 20) ||
+          (24 <= parseInt(day) && parseInt(day) <= 30)
+        ) {
+          suffix = 'th';
+        } else {
+          const suffixes: string[] = ['st', 'nd', 'rd'];
+          suffix = suffixes[(parseInt(day) % 10) - 1];
+        }
+
+        //Exising Assets Block
+        pdf
+          .font('LeagueSpartan-Regular')
+          .fontSize(this.px2MM(24))
+          .fillColor(this.hex2RGB('#ffffff'))
+          .text(
+            `As on ${day}${suffix} ${month} ${year}`,
+            this.px2MM(600),
+            this.px2MM(110),
+            { width: this.px2MM(400), height: this.px2MM(32), align: 'left' },
+          );
+
+        // let label_block_x = 1280;
+        // let label_block_y = 81;
+        // let label_block_width = 520;
+        // let label_block_height = 82;
+
+        // pdf
+        //   .fillColor(this.hex2RGB('#000000'))
+        //   .rect(
+        //     this.px2MM(label_block_x),
+        //     this.px2MM(label_block_y),
+        //     this.px2MM(label_block_width),
+        //     this.px2MM(label_block_height),
+        //   )
+        //   .fill();
+
+        // pdf
+        //   .font('LeagueSpartan-SemiBold')
+        //   .fontSize(this.px2MM(30))
+        //   .fillColor(this.hex2RGB('#ffffff'))
+        //   .text(
+        //     `Existing Assets: `,
+        //     this.px2MM(label_block_x + 30),
+        //     this.px2MM(107),
+        //     { width: this.px2MM(330), height: this.px2MM(42), align: 'left' },
+        //   );
+
+        // TODO: Change this to correct value
+        // const indicatorval = jsondata['assets']['total']['market_value'];
+        // const indicatorColor = ColorEnum.INDICATOR_UP_LIGHT;
+
+        // pdf
+        //   .font('LeagueSpartan-SemiBold')
+        //   .fontSize(this.px2MM(42))
+        //   .fillColor(this.hex2RGB('#ffffff'))
+        //   .text(
+        //     `₹ ${this.format_cash2(
+        //       parseFloat(jsondata['assets']['total']['market_value']),
+        //     )} `,
+        //     this.px2MM(label_block_x + 245),
+        //     this.px2MM(100),
+        //     {
+        //       width: this.px2MM(370),
+        //       height: this.px2MM(42),
+        //       align: 'left',
+        //       continued: true,
+        //     },
+        //   )
+        //   .font('LeagueSpartan-SemiBold')
+        //   .fontSize(this.px2MM(24))
+        //   .fillColor(this.hex2RGB(indicatorColor))
+        //   .text(
+        //     ` ₹ ${this.format_cash2(parseFloat(indicatorval))}`,
+        //     this.px2MM(label_block_x + 245),
+        //     this.px2MM(110),
+        //     { width: this.px2MM(100), height: this.px2MM(42), align: 'left' },
+        //   );
+
+        let Ind_width = 10;
+        let Ind_height = 17;
+        pdf.image(
+          path.join(
+            cwd,
+            'src',
+            'lib',
+            'shared',
+            'assets',
+            'images',
+            'icons',
+            'ArrowUpLight.png',
           ),
-        );
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          `₹${current_liability_distribution_outstanding_total}`,
-          this.px2MM(col_x + 20),
-          this.px2MM(col_y + col_height / 2 - 12),
-          {
-            width: this.px2MM(col_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
+          this.px2MM(1762),
+          this.px2MM(109),
+          { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
         );
 
-      col_x += col_width;
-
-      const current_liability_distribution_emi_percentage = this.format_cash2(
-        parseFloat(
-          liability_management_total[
-          'current_liability_distribution_emi_percentage'
-          ],
-        ),
-      );
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          `₹${current_liability_distribution_emi_percentage}`,
-          this.px2MM(col_x + 20),
-          this.px2MM(col_y + col_height / 2 - 12),
-          {
-            width: this.px2MM(col_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      col_x += col_width;
-
-      const suggested_loan_size_range = liability_management_total?.[
-        'suggested_loan_size_range'
-      ]
-        .split('to')
-        .map((item) => `₹${this.format_cash2(parseFloat(item.trim()))}`)
-        .join(' to ');
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          `${suggested_loan_size_range}`,
-          this.px2MM(col_x + 20),
-          this.px2MM(col_y + col_height / 2 - 12),
-          {
-            width: this.px2MM(col_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      col_x += col_width;
-
-      const suggested_emi_range = liability_management_total?.[
-        'suggested_emi_range'
-      ]
-        .split('to')
-        .map((item) => `₹${this.format_cash2(parseFloat(item.trim()))}`)
-        .join(' to ');
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          `${suggested_emi_range}`,
-          this.px2MM(col_x + 20),
-          this.px2MM(col_y + col_height / 2 - 12),
-          {
-            width: this.px2MM(col_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      //////Comments
-
-      let text_x = 120;
-
-      let text_y = 810;
-      let text_width = 1680;
-      let text_height = 42;
-
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(32))
-        .text('Comments', this.px2MM(text_x), this.px2MM(text_y), {
-          width: this.px2MM(text_width),
-          height: this.px2MM(text_height),
-          align: 'left',
+        pdf.image(chartImage, this.px2MM(120), this.px2MM(204), {
+          width: this.px2MM(500),
+          height: this.px2MM(500),
         });
 
-      text_y += text_height + 20;
+        //Table
 
-      pdf.y = this.px2MM(text_y);
-
-      for (let i = 0; i < liability_management_comments.length; i++) {
         pdf
-          .fillColor(this.hex2RGB('#000000'))
+          .fillColor(this.hex2RGB('#ffffff'))
+          .lineWidth(this.px2MM(0.2))
+          .strokeColor(this.hex2RGB('#E9EAEE'))
           .rect(
-            this.px2MM(text_x),
-            this.px2MM(text_y + 7),
-            this.px2MM(10),
-            this.px2MM(10),
+            this.px2MM(690),
+            this.px2MM(317),
+            this.px2MM(397 + 295),
+            this.px2MM(72),
           )
-          .fill();
+          .fillAndStroke();
+
+        pdf
+          .font('LeagueSpartan-SemiBold', this.px2MM(24))
+          .fillColor(this.hex2RGB('#1A1A1D'))
+          .text('Incomes', this.px2MM(710), this.px2MM(341), {
+            width: this.px2MM(257),
+            height: this.px2MM(32),
+            align: 'left',
+          });
+
+
+        pdf
+          .fillColor(this.hex2RGB('#ffffff'))
+          .rect(
+            this.px2MM(1380),
+            this.px2MM(317),
+            this.px2MM(177),
+            this.px2MM(72),
+          )
+          .fillAndStroke();
 
         pdf
           .fillColor(this.hex2RGB('#1A1A1D'))
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(24))
-          .text(
-            `${liability_management_comments[i]}`,
-            this.px2MM(text_x + 30),
-            pdf.y,
-            {
-              width: this.px2MM(text_width),
-              lineGap: this.px2MM(10),
-              align: 'left',
-            },
+          .text('%', this.px2MM(1380), this.px2MM(341), {
+            width: this.px2MM(177),
+            height: this.px2MM(32),
+            align: 'center',
+          });
+
+        pdf
+          .fillColor(this.hex2RGB('#ffffff'))
+          .rect(
+            this.px2MM(1557),
+            this.px2MM(317),
+            this.px2MM(243),
+            this.px2MM(72),
+          )
+          .fillAndStroke();
+
+        pdf
+          .fillColor(this.hex2RGB('#1A1A1D'))
+          .text('Amount', this.px2MM(1577), this.px2MM(341), {
+            width: this.px2MM(203),
+            height: this.px2MM(32),
+            align: 'right',
+          });
+
+        let rect_y = 389;
+        let rect_gap = 62;
+        let state_y = 408;
+        let state_gap = 62;
+
+        let y_high = this.mm2PX(pdf.y) + 20;
+        let col = '#F3F6F9';
+
+        for (
+          let j = start;
+          j < stop && j < Object.keys(assets_table).length;
+          j++
+        ) {
+          try {
+            if (!assets_table[j]['title']) {
+              break;
+            }
+          } catch (error) {
+            break;
+          }
+
+          if (j % 2 === 0) {
+            col = '#F3F6F9';
+          } else {
+            col = '#FFFFFF';
+          }
+
+          pdf.font('LeagueSpartan-Regular');
+          pdf
+            .fillColor(this.hex2RGB(col))
+            .fontSize(this.px2MM(24))
+            .strokeColor(this.hex2RGB('#E9EAEE'))
+            .rect(
+              this.px2MM(690),
+              this.px2MM(rect_y),
+              this.px2MM(397 + 295),
+              this.px2MM(62),
+            )
+            .fillAndStroke();
+
+          pdf
+            .fillColor(this.hex2RGB('#000000'))
+            .text(
+              assets_table[j]['title'].toString(),
+              this.px2MM(710),
+              this.px2MM(state_y),
+              { width: this.px2MM(257), height: this.px2MM(32), align: 'left' },
+            );
+
+
+          pdf
+            .fillColor(this.hex2RGB(col))
+            .rect(
+              this.px2MM(1380),
+              this.px2MM(rect_y),
+              this.px2MM(177),
+              this.px2MM(62),
+            )
+            .fillAndStroke();
+          if (!assets_table[j]['value']) {
+            pdf
+              .fillColor(this.hex2RGB('#000000'))
+              .text('-', this.px2MM(1400), this.px2MM(state_y), {
+                width: this.px2MM(137),
+                height: this.px2MM(32),
+                align: 'right',
+              });
+          } else {
+            pdf
+              .fillColor(this.hex2RGB('#000000'))
+              .text(
+                `${assets_pie[j]['percentage'].toFixed(2).toString()} %`,
+                this.px2MM(1400),
+                this.px2MM(state_y),
+                {
+                  width: this.px2MM(137),
+                  height: this.px2MM(32),
+                  align: 'right',
+                },
+              );
+          }
+
+          pdf
+            .fillColor(this.hex2RGB(col))
+            .rect(
+              this.px2MM(1557),
+              this.px2MM(rect_y),
+              this.px2MM(243),
+              this.px2MM(62),
+            )
+            .fillAndStroke();
+          if (
+            assets_table[j]['value'].toString() === '' ||
+            parseInt(assets_table[j]['value'].toString()) === 0
+          ) {
+            pdf
+              .fillColor(this.hex2RGB('#000000'))
+              .text('₹ 0.0K', this.px2MM(1577), this.px2MM(state_y), {
+                width: this.px2MM(203),
+                height: this.px2MM(32),
+                align: 'right',
+              });
+          } else {
+            pdf
+              .fillColor(this.hex2RGB('#000000'))
+              .text(
+                '₹ ' +
+                this.format_cash2(
+                  parseFloat(assets_table[j]['value'].toString()),
+                ),
+                this.px2MM(1577),
+                this.px2MM(state_y),
+                {
+                  width: this.px2MM(203),
+                  height: this.px2MM(32),
+                  align: 'right',
+                },
+              );
+          }
+
+          rect_y += rect_gap;
+          state_y += state_gap;
+          y_high = this.mm2PX(pdf.y);
+
+          if (j === Object.keys(assets_table).length - 1) {
+            pdf.font('LeagueSpartan-SemiBold');
+
+            pdf
+              .fillColor(this.hex2RGB('#ffffff'))
+              .fontSize(this.px2MM(24))
+              .rect(
+                this.px2MM(690),
+                this.px2MM(rect_y),
+                this.px2MM(297),
+                this.px2MM(52),
+              )
+              .fill();
+
+            pdf
+              .fillColor(this.hex2RGB('#000000'))
+              .text('Total', this.px2MM(710), this.px2MM(state_y - 5), {
+                width: this.px2MM(257),
+                height: this.px2MM(32),
+                align: 'left',
+              });
+
+            pdf
+              .fillColor(this.hex2RGB('#ffffff'))
+              .rect(
+                this.px2MM(987),
+                this.px2MM(rect_y),
+                this.px2MM(100),
+                this.px2MM(52),
+              )
+              .fill();
+
+            pdf
+              .fillColor(this.hex2RGB('#ffffff'))
+              .rect(
+                this.px2MM(1087),
+                this.px2MM(rect_y),
+                this.px2MM(293),
+                this.px2MM(52),
+              )
+              .fill();
+
+            pdf
+              .fillColor(this.hex2RGB('#ffffff'))
+              .rect(
+                this.px2MM(1380),
+                this.px2MM(rect_y),
+                this.px2MM(177),
+                this.px2MM(52),
+              )
+              .fill();
+            // if (!total_assets) {
+            //   pdf
+            //     .fillColor(this.hex2RGB('#000000'))
+            //     .text('-', this.px2MM(1400), this.px2MM(state_y - 5), {
+            //       width: this.px2MM(137),
+            //       height: this.px2MM(32),
+            //       align: 'right',
+            //     });
+            // } else {
+            //   pdf
+            //     .fillColor(this.hex2RGB('#000000'))
+            //     .text(
+            //       ' ' +
+            //       this.format_cash2(
+            //         parseFloat(total_assets.toString()),
+            //       ).toString(),
+            //       this.px2MM(1400),
+            //       this.px2MM(state_y - 5),
+            //       {
+            //         width: this.px2MM(137),
+            //         height: this.px2MM(32),
+            //         align: 'right',
+            //       },
+            //     );
+            // }
+
+            pdf
+              .fillColor(this.hex2RGB('#ffffff'))
+              .rect(
+                this.px2MM(1557),
+                this.px2MM(rect_y),
+                this.px2MM(243),
+                this.px2MM(52),
+              )
+              .fill();
+            if (
+              !total_assets ||
+              parseInt(assets_table[j]['value'].toString()) === 0
+            ) {
+              pdf
+                .fillColor(this.hex2RGB('#000000'))
+                .text('₹ 0.0K', this.px2MM(1577), this.px2MM(state_y - 5), {
+                  width: this.px2MM(203),
+                  height: this.px2MM(32),
+                  align: 'right',
+                });
+            } else {
+              pdf
+                .fillColor(this.hex2RGB('#000000'))
+                .text(
+                  '₹ ' +
+                  this.format_cash2(
+                    parseFloat(
+                      total_assets.toString(),
+                    ),
+                  ),
+                  this.px2MM(1577),
+                  this.px2MM(state_y),
+                  {
+                    width: this.px2MM(203),
+                    height: this.px2MM(32),
+                    align: 'right',
+                  },
+                );
+            }
+          }
+        }
+
+        let circle_y: number = 764;
+        let common_gap: number = 42;
+        let text_y: number = 758;
+
+        for (let i = 0; i < Object.keys(assets_pie).length; i++) {
+          pdf.fillColor(this.hex2RGB(assets_pie[i]['colors']));
+          pdf
+            .circle(this.px2MM(227), this.px2MM(circle_y), this.px2MM(10))
+            .fill();
+
+          pdf
+            .font('LeagueSpartan-Regular')
+            .fontSize(this.px2MM(24))
+            .fillColor(this.hex2RGB('#ffffff'));
+          pdf.text(
+            `${assets_pie[i]['particular']}:`,
+            this.px2MM(267),
+            this.px2MM(text_y),
+            { align: 'left', width: this.px2MM(250), height: this.px2MM(32) },
           );
 
-        pdf.y += this.px2MM(20);
-        text_y = this.mm2PX(pdf.y);
-      }
+          pdf.text(
+            `${Math.round(assets_pie[i]['percentage'])}%`,
+            this.px2MM(517),
+            this.px2MM(text_y),
+            { align: 'right', width: this.px2MM(80), height: this.px2MM(32) },
+          );
 
-      // index Text
-      this.index_text(pdf, '#1A1A1D');
+          if (assets_pie[i]['particular'].length > 24) {
+            circle_y += common_gap * 2;
+            text_y += common_gap * 2;
+          }
+
+          circle_y += common_gap;
+          text_y += common_gap;
+        }
+
+        start = stop;
+        stop += 8;
+
+        //index page
+        this.index_text(pdf, '#1A1A1D');
+      }
     } catch (err) {
       Logger.error(err);
     }
   }
+
+
+  // async networthLinegraph(years, networth, cnwt) {
+  //   try {
+  //     const width = 606;
+  //     const height = 335;
+
+  //     const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+  //     const configuration = {
+  //       type: 'line',
+  //       data: {
+  //         labels: years,
+  //         datasets: [
+  //           {
+  //             data: [cnwt[0]],
+  //             borderColor: 'black',
+  //             borderWidth: 1,
+  //             pointRadius: 8,
+  //             fill: false,
+  //             borderSkipped: 'bottom',
+  //           },
+  //           {
+  //             data: [cnwt[0]],
+  //             pointRadius: 4,
+  //             pointBackgroundColor: 'black',
+  //             fill: false,
+  //             borderSkipped: 'bottom',
+  //           },
+  //           {
+  //             data: cnwt,
+  //             backgroundColor: 'rgba(255, 212, 203, 0.5)',
+  //             borderColor: '#FF7051',
+  //             borderWidth: 1,
+  //             pointRadius: 0,
+  //             fill: true,
+  //             borderSkipped: 'bottom',
+  //           },
+  //           {
+  //             data: networth,
+  //             backgroundColor: 'rgba(212, 255, 237, 0.5)',
+  //             borderColor: '#43D195',
+  //             borderWidth: 1,
+  //             pointRadius: 0,
+  //             fill: true,
+  //             borderSkipped: 'bottom',
+  //           },
+  //         ],
+  //       },
+
+  //       options: {
+  //         responsive: true,
+  //         maintainAspectRatio: false,
+  //         scales: {
+  //           x: {
+  //             beginAtZero: true,
+  //             ticks: {
+  //               autoSkip: true,
+  //               maxTicksLimit: 10,
+  //               maxRotation: 0,
+  //               minRotation: 0,
+  //             },
+  //             grid: {
+  //               color: 'rgba(243, 246, 249, 0.1)',
+  //             },
+  //           },
+  //           y: {
+  //             beginAtZero: true,
+  //             ticks: {
+  //               // callback: function (value, index, values) {
+  //               //   // Show only every nth label
+  //               //   return index % Math.ceil(values.length / 7) === 0 ? `₹ ${value} Cr ` : '';
+  //               // },
+  //               callback: (value) => `₹ ${value} Cr`,
+  //               autoSkip: true,
+  //               maxTicksLimit: 8,
+  //             },
+  //             grid: {
+  //               color: 'rgba(243, 246, 249, 0.1)',
+  //             },
+  //           },
+  //         },
+  //         plugins: {
+  //           legend: {
+  //             display: false,
+  //           },
+  //         },
+  //       },
+  //     };
+  //     const image = await chartJSNodeCanvas.renderToDataURL(configuration);
+
+  //     return image;
+  //   } catch (err) {
+  //     Logger.error(err);
+  //   }
+  // }
+
+  // async netWorth(pdf: PDFKit.PDFDocument, jsondata: any) {
+  //   try {
+  //     const net_worth_projection = jsondata?.networth;
+
+  //     pdf.addPage();
+  //     pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
+  //     pdf.scale(this.scale_pdf() || 1.6572658674215652);
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FCF8ED'))
+  //       .rect(0, 0, this.px2MM(1920), this.px2MM(1080))
+  //       .fill();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .rect(0, this.px2MM(80), this.px2MM(15), this.px2MM(84))
+  //       .fill();
+
+  //     pdf
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(60))
+  //       .fillColor(this.hex2RGB('#1A1A1D'))
+  //       .text('Net Worth', this.px2MM(120), this.px2MM(92), {
+  //         width: this.px2MM(589),
+  //         height: this.px2MM(84),
+  //         align: 'left',
+  //       });
+
+  //     this.index_text(pdf, '#1A1A1D');
+  //     let chart_main_box_x = 120;
+  //     let chart_main_box_y = 204;
+  //     let chart_main_box_width = 812;
+  //     let chart_main_box_height = 389;
+
+  //     pdf.fillColor(this.hex2RGB('#ffffff'));
+  //     pdf
+  //       .rect(
+  //         this.px2MM(chart_main_box_x),
+  //         this.px2MM(chart_main_box_y),
+  //         this.px2MM(chart_main_box_width),
+  //         this.px2MM(chart_main_box_height),
+  //       )
+  //       .fill();
+
+  //     pdf.fillColor(this.hex2RGB('#65676D'));
+  //     pdf
+  //       .font('LeagueSpartan-Regular')
+  //       .fontSize(this.px2MM(40))
+  //       .text(
+  //         'Net Worth',
+  //         this.px2MM(chart_main_box_x + 60),
+  //         this.px2MM(chart_main_box_y + 122),
+  //         { width: this.px2MM(315), height: this.px2MM(57), align: 'left' },
+  //       );
+  //     const net_worth = jsondata?.networth;
+
+  //     const total_assets = `₹ ${this.format_cash2(
+  //       parseFloat(net_worth?.assets),
+  //     )}`;
+  //     pdf.fillColor(this.hex2RGB('#000000'));
+
+  //     pdf
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(72))
+  //       .text(
+  //         `${total_assets}`,
+  //         this.px2MM(chart_main_box_x + 60),
+  //         this.px2MM(chart_main_box_y + 202),
+  //         { width: this.px2MM(280), height: this.px2MM(68), align: 'left' },
+  //       );
+  //     let Ind_width = 60;
+  //     let Ind_height = 55;
+  //     pdf.image(
+  //       path.join(
+  //         cwd,
+  //         'src',
+  //         'lib',
+  //         'shared',
+  //         'assets',
+  //         'images',
+  //         'icons',
+  //         'ArrowUp.png',
+  //       ),
+  //       this.px2MM(chart_main_box_x + 290),
+  //       this.px2MM(chart_main_box_y + 212),
+  //       { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
+  //     );
+
+  //     pdf.fillColor(this.hex2RGB('#B9BABE'));
+  //     pdf
+  //       .rect(
+  //         this.px2MM(chart_main_box_x + 395),
+  //         this.px2MM(chart_main_box_y + 75),
+  //         this.px2MM(1),
+  //         this.px2MM(237),
+  //       )
+  //       .fill();
+
+  //     Ind_width = 22;
+  //     Ind_height = 30;
+  //     pdf.fillColor(this.hex2RGB('#898B90'));
+  //     pdf
+  //       .font('LeagueSpartan-Regular')
+  //       .fontSize(this.px2MM(30))
+  //       .text(
+  //         'Total Assets',
+  //         this.px2MM(chart_main_box_x + 415),
+  //         this.px2MM(chart_main_box_y + 75),
+  //         { width: this.px2MM(315), height: this.px2MM(42), align: 'left' },
+  //       );
+  //     pdf
+  //       .fillColor(this.hex2RGB('#898B90'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(35))
+  //       .text(
+  //         `${total_assets}`,
+  //         this.px2MM(chart_main_box_x + 415),
+  //         this.px2MM(chart_main_box_y + 128),
+  //         { width: this.px2MM(315), height: this.px2MM(54), align: 'left' },
+  //       );
+  //     let IndicatorColor = ColorEnum.INDICATOR_UP;
+  //     pdf
+  //       .fillColor(this.hex2RGB(IndicatorColor))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       //TODO: Change this to correct value
+  //       .text(
+  //         `${total_assets}`,
+  //         this.px2MM(chart_main_box_x + 551),
+  //         this.px2MM(chart_main_box_y + 132),
+  //         { width: this.px2MM(100), height: this.px2MM(54), align: 'left' },
+  //       );
+  //     pdf.image(
+  //       path.join(
+  //         cwd,
+  //         'src',
+  //         'lib',
+  //         'shared',
+  //         'assets',
+  //         'images',
+  //         'icons',
+  //         'ArrowUp.png',
+  //       ),
+  //       this.px2MM(chart_main_box_x + 630),
+  //       this.px2MM(chart_main_box_y + 129),
+  //       { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
+  //     );
+
+  //     pdf.fillColor(this.hex2RGB('#898B90'));
+  //     pdf
+  //       .font('LeagueSpartan-Regular')
+  //       .fontSize(this.px2MM(30))
+  //       .text(
+  //         'Total Liabilities',
+  //         this.px2MM(chart_main_box_x + 415),
+  //         this.px2MM(chart_main_box_y + 220),
+  //         { width: this.px2MM(315), height: this.px2MM(42), align: 'left' },
+  //       );
+  //     pdf
+  //       .fillColor(this.hex2RGB('#898B90'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(35))
+  //       .text(
+  //         `${total_assets}`,
+  //         this.px2MM(chart_main_box_x + 415),
+  //         this.px2MM(chart_main_box_y + 272),
+  //         { width: this.px2MM(315), height: this.px2MM(54), align: 'left' },
+  //       );
+  //     IndicatorColor = ColorEnum.INDICATOR_UP;
+  //     pdf
+  //       .fillColor(this.hex2RGB(IndicatorColor))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       //TODO: Change this to correct value
+  //       .text(
+  //         `${total_assets}`,
+  //         this.px2MM(chart_main_box_x + 551),
+  //         this.px2MM(chart_main_box_y + 277),
+  //         { width: this.px2MM(100), height: this.px2MM(54), align: 'left' },
+  //       );
+
+  //     pdf.image(
+  //       path.join(
+  //         cwd,
+  //         'src',
+  //         'lib',
+  //         'shared',
+  //         'assets',
+  //         'images',
+  //         'icons',
+  //         'ArrowUp.png',
+  //       ),
+  //       this.px2MM(chart_main_box_x + 630),
+  //       this.px2MM(chart_main_box_y + 274),
+  //       { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
+  //     );
+
+  //     chart_main_box_x = 120;
+  //     chart_main_box_y = 204 + chart_main_box_height;
+  //     chart_main_box_width = 812;
+  //     chart_main_box_height = 96;
+
+  //     pdf.fillColor(this.hex2RGB('#D4FFED'));
+  //     pdf
+  //       .rect(
+  //         this.px2MM(chart_main_box_x),
+  //         this.px2MM(chart_main_box_y),
+  //         this.px2MM(chart_main_box_width),
+  //         this.px2MM(chart_main_box_height),
+  //       )
+  //       .fill();
+
+  //     pdf.fillColor(this.hex2RGB('#000000'));
+  //     pdf
+  //       .font('LeagueSpartan-Light')
+  //       .fontSize(this.px2MM(30))
+  //       .text(
+  //         'Currently your Net Worth has increased by ',
+  //         this.px2MM(chart_main_box_x),
+  //         this.px2MM(chart_main_box_y + 30),
+  //         {
+  //           width: this.px2MM(chart_main_box_width - 100),
+  //           height: this.px2MM(42),
+  //           align: 'center',
+  //         },
+  //       );
+  //     pdf
+  //       .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(40))
+  //       //TODO: Change this to correct value
+  //       .text(
+  //         '15%',
+  //         this.px2MM(chart_main_box_x + 625),
+  //         this.px2MM(chart_main_box_y + 27),
+  //         { width: this.px2MM(100), height: this.px2MM(54), align: 'left' },
+  //       );
+
+  //     chart_main_box_x = 120;
+  //     chart_main_box_y = chart_main_box_y + chart_main_box_height + 50;
+  //     chart_main_box_width = 812;
+  //     chart_main_box_height = 228;
+
+  //     pdf.fillColor(this.hex2RGB('#ffffff'));
+  //     pdf
+  //       .rect(
+  //         this.px2MM(chart_main_box_x),
+  //         this.px2MM(chart_main_box_y),
+  //         this.px2MM(chart_main_box_width),
+  //         this.px2MM(chart_main_box_height),
+  //       )
+  //       .fill();
+
+  //     pdf.fillColor(this.hex2RGB('#000000'));
+  //     pdf
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(40))
+  //       .text(
+  //         `Value Under Advisory: ₹ ${'000Cr'} `,
+  //         this.px2MM(chart_main_box_x + 75),
+  //         this.px2MM(chart_main_box_y + 60),
+  //         {
+  //           width: this.px2MM(660),
+  //           height: this.px2MM(42),
+  //           align: 'left',
+  //           continued: true,
+  //         },
+  //       )
+  //       .fillColor(this.hex2RGB(ColorEnum.INDICATOR_UP))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(28))
+  //       //TODO: Change this to correct value
+  //       .text(
+  //         `₹ ${this.format_cash2(parseFloat('1588989'))}`,
+  //         this.px2MM(chart_main_box_x + 75),
+  //         this.px2MM(chart_main_box_y + 68),
+  //         { height: this.px2MM(54), align: 'right', continued: false },
+  //       );
+  //     Ind_width = 60;
+  //     Ind_height = 52;
+  //     pdf.image(
+  //       path.join(
+  //         cwd,
+  //         'src',
+  //         'lib',
+  //         'shared',
+  //         'assets',
+  //         'images',
+  //         'icons',
+  //         'ArrowUp.png',
+  //       ),
+  //       this.px2MM(chart_main_box_x + 695),
+  //       this.px2MM(chart_main_box_y + 56),
+  //       { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
+  //     );
+  //     pdf
+  //       .fillColor(this.hex2RGB('#4B4C51'))
+  //       .font('LeagueSpartan-Regular')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         `Value Under Advisory = Assets + Liabilities`,
+  //         this.px2MM(chart_main_box_x + 92.5),
+  //         this.px2MM(chart_main_box_y + 136),
+  //         { width: this.px2MM(627), height: this.px2MM(30), align: 'center' },
+  //       );
+
+  //     chart_main_box_x = 992;
+  //     chart_main_box_y = 204;
+  //     chart_main_box_width = 808;
+  //     chart_main_box_height = 762;
+
+  //     pdf.fillColor(this.hex2RGB('#ffffff'));
+  //     pdf
+  //       .rect(
+  //         this.px2MM(chart_main_box_x),
+  //         this.px2MM(chart_main_box_y),
+  //         this.px2MM(chart_main_box_width),
+  //         this.px2MM(chart_main_box_height),
+  //       )
+  //       .fill();
+
+  //     const years = jsondata?.networth?.networth_projection?.table.map(
+  //       (item) => item.year,
+  //     );
+
+  //     const networth = jsondata?.networth?.networth_projection?.table.map(
+  //       (item) => item.nwtet,
+  //     );
+  //     const cnwt = jsondata?.networth?.networth_projection?.table.map(
+  //       (item) => item.cnwt,
+  //     );
+
+  //     const chartImage = await this.networthLinegraph(years, networth, cnwt);
+
+  //     pdf.image(
+  //       chartImage,
+  //       this.px2MM(chart_main_box_x + 40),
+  //       this.px2MM(chart_main_box_y + 40),
+  //       {
+  //         width: this.px2MM(chart_main_box_width - 94),
+  //         height: this.px2MM(364),
+  //       },
+  //     );
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FF7051'))
+  //       .rect(
+  //         this.px2MM(chart_main_box_x + 50),
+  //         this.px2MM(chart_main_box_y + 450),
+  //         this.px2MM(12),
+  //         this.px2MM(12),
+  //       )
+  //       .fill();
+
+  //     pdf.fillColor(this.hex2RGB('#000000'));
+  //     pdf
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Current Net Worth Trajectory (CNWT)',
+  //         this.px2MM(chart_main_box_x + 77),
+  //         this.px2MM(chart_main_box_y + 444),
+  //         { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
+  //       );
+
+  //     const maxCurr_cnwt = this.format_cash2(
+  //       net_worth_projection?.networth_projection['retirement_cnwt'],
+  //     );
+  //     const mnth_cnwt =
+  //       net_worth_projection?.networth_projection?.retirement_month_year
+  //         ?.split(' ')[0]
+  //         .toUpperCase()
+  //         .slice(0, 3) +
+  //       `'${net_worth_projection?.networth_projection?.retirement_month_year?.split(
+  //         ' ',
+  //       )[1]
+  //       }' | ₹ ${maxCurr_cnwt}`;
+
+  //     pdf.fillColor(this.hex2RGB('#898B90'));
+  //     pdf
+  //       .font('LeagueSpartan-Regular')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         mnth_cnwt,
+  //         this.px2MM(chart_main_box_x + 77),
+  //         this.px2MM(chart_main_box_y + 481),
+  //         { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
+  //       );
+
+  //     pdf.fillColor(this.hex2RGB('#000000'));
+  //     pdf
+  //       .font('LeagueSpartan-Light')
+  //       .fontSize(this.px2MM(18))
+  //       .text(
+  //         'Assumes that you maintain your current financial habits until retirement.',
+  //         this.px2MM(chart_main_box_x + 77),
+  //         this.px2MM(chart_main_box_y + 518),
+  //         { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
+  //       );
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#43D195'))
+  //       .rect(
+  //         this.px2MM(chart_main_box_x + 50),
+  //         this.px2MM(chart_main_box_y + 579),
+  //         this.px2MM(12),
+  //         this.px2MM(12),
+  //       )
+  //       .fill();
+
+  //     pdf.fillColor(this.hex2RGB('#000000'));
+  //     pdf
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Net worth Trajectory With Effective Planning (NWTEP)',
+  //         this.px2MM(chart_main_box_x + 77),
+  //         this.px2MM(chart_main_box_y + 573),
+  //         { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
+  //       );
+
+  //     pdf.fillColor(this.hex2RGB('#898B90'));
+  //     const maxCurr = this.format_cash2(
+  //       net_worth_projection?.networth_projection['retirement_nwtet'],
+  //     );
+  //     const mnth =
+  //       net_worth_projection?.networth_projection?.retirement_month_year
+  //         ?.split(' ')[0]
+  //         .toUpperCase()
+  //         .slice(0, 3) +
+  //       `'${net_worth_projection?.networth_projection?.retirement_month_year?.split(
+  //         ' ',
+  //       )[1]
+  //       }' | ₹ ${maxCurr}`;
+  //     // console.log(mnth);
+  //     pdf
+  //       .font('LeagueSpartan-Regular')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         mnth,
+  //         this.px2MM(chart_main_box_x + 77),
+  //         this.px2MM(chart_main_box_y + 610),
+  //         { width: this.px2MM(559), height: this.px2MM(32), align: 'left' },
+  //       );
+
+  //     pdf.fillColor(this.hex2RGB('#000000'));
+  //     pdf
+  //       .font('LeagueSpartan-Light')
+  //       .fontSize(this.px2MM(18))
+  //       .text(
+  //         "Assumes that your finances are aligned with your personality by following the ideal guidance provided on the 'Your Financial Analysis' pages on the following aspects: expense and liability management, asset allocation, and emergency planning.",
+  //         this.px2MM(chart_main_box_x + 77),
+  //         this.px2MM(chart_main_box_y + 647),
+  //         {
+  //           width: this.px2MM(559),
+  //           lineGap: this.px2MM(4),
+  //           height: this.px2MM(100),
+  //           align: 'left',
+  //         },
+  //       );
+  //     // console.log(net_worth_projection)
+  //   } catch (err) {
+  //     Logger.error(err);
+  //   }
+  // }
+
+  // async liability_management(pdf: PDFKit.PDFDocument, jsondata: any) {
+  //   try {
+  //     const liability_management = jsondata?.liability_management;
+  //     const liability_management_table = liability_management?.table;
+  //     const liability_management_total = liability_management?.total;
+  //     const liability_management_comments = liability_management?.comments;
+
+  //     const credit_score_analysis =
+  //       jsondata?.bureau_report_summary?.credit_score_analysis;
+  //     const credit_score = credit_score_analysis?.score;
+  //     const credit_score_comments = credit_score_analysis?.commentary;
+
+  //     if (!liability_management_table) return;
+
+  //     pdf.addPage();
+  //     pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
+  //     pdf.scale(this.scale_pdf() || 1.6572658674215652);
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FCF8ED'))
+  //       .rect(0, 0, this.px2MM(1920), this.px2MM(1080))
+  //       .fill();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .rect(0, this.px2MM(80), this.px2MM(15), this.px2MM(84))
+  //       .fill();
+
+  //     pdf
+
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(60))
+  //       .fillColor(this.hex2RGB('#1A1A1D'))
+  //       .text('Liability Management', this.px2MM(120), this.px2MM(92), {
+  //         width: this.px2MM(589),
+  //         height: this.px2MM(84),
+  //         align: 'left',
+  //       });
+
+  //     let lib_manag_main_box_x = 120;
+  //     let lib_manag_main_box_y = 228;
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#ffffff'))
+  //       .rect(
+  //         this.px2MM(lib_manag_main_box_x),
+  //         this.px2MM(lib_manag_main_box_y),
+  //         this.px2MM(416),
+  //         this.px2MM(542),
+  //       )
+  //       .fill();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#1A1A1D'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Your Credit Score',
+  //         this.px2MM(lib_manag_main_box_x + 108),
+  //         this.px2MM(lib_manag_main_box_y + 32.5),
+  //         { width: this.px2MM(200), height: this.px2MM(32), align: 'center' },
+  //       );
+
+  //     let score_ind_img = 'bad_credit';
+  //     if (credit_score >= 800) {
+  //       score_ind_img = 'outstanding_credit';
+  //     } else if (credit_score > 665) {
+  //       score_ind_img = 'excellent_credit';
+  //     } else if (credit_score > 550) {
+  //       score_ind_img = 'good_credit';
+  //     } else if (credit_score > 360) {
+  //       score_ind_img = 'improve_credit';
+  //     } else {
+  //       score_ind_img = 'bad_credit';
+  //     }
+
+  //     pdf.image(
+  //       path.join(
+  //         cwd,
+  //         `src/lib/shared/assets/images/credit_score/${score_ind_img}.png`,
+  //       ),
+  //       this.px2MM(lib_manag_main_box_x + 40),
+  //       this.px2MM(lib_manag_main_box_y + 84.5),
+  //       { width: this.px2MM(336), height: this.px2MM(239) },
+  //     );
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#1A1A1D'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(75))
+  //       .text(
+  //         `${credit_score}`,
+  //         this.px2MM(lib_manag_main_box_x + 128),
+  //         this.px2MM(lib_manag_main_box_y + 210.5),
+  //         { width: this.px2MM(160), height: this.px2MM(70), align: 'center' },
+  //       );
+
+  //     let changeScr = '5';
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-Medium')
+  //       .fontSize(this.px2MM(24))
+  //       //TODO: Change this to correct value
+  //       .text(
+  //         `Increase in score - `,
+  //         this.px2MM(lib_manag_main_box_x + 40),
+  //         this.px2MM(lib_manag_main_box_y + 353.5),
+  //         {
+  //           width: this.px2MM(300),
+  //           height: this.px2MM(70),
+  //           align: 'center',
+  //           continued: true,
+  //         },
+  //       )
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fillColor(this.hex2RGB('#26A670'))
+  //       .fontSize(this.px2MM(40))
+  //       .text(
+  //         `${changeScr}`,
+  //         this.px2MM(lib_manag_main_box_x + 67),
+  //         this.px2MM(lib_manag_main_box_y + 350),
+  //       );
+
+  //     let Ind_x = lib_manag_main_box_x + 40 + 270;
+  //     Ind_x += changeScr.length >= 3 ? 30 : changeScr.length >= 2 ? 15 : 4;
+  //     let Ind_width = 35;
+  //     let Ind_height = 38;
+  //     //TODO: Change this condition from 0 to correct value
+  //     const Ind_dir = 0 ? 'ArrowDown.png' : 'ArrowUp.png';
+  //     pdf.image(
+  //       path.join(
+  //         cwd,
+  //         'src',
+  //         'lib',
+  //         'shared',
+  //         'assets',
+  //         'images',
+  //         'icons',
+  //         Ind_dir,
+  //       ),
+  //       this.px2MM(Ind_x),
+  //       this.px2MM(lib_manag_main_box_y + 352),
+  //       { width: this.px2MM(Ind_width), height: this.px2MM(Ind_height) },
+  //     );
+
+  //     let subtext_x = lib_manag_main_box_x + 40;
+  //     let subtext_y = lib_manag_main_box_y + 429;
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#F3F6F9'))
+  //       .rect(
+  //         this.px2MM(subtext_x),
+  //         this.px2MM(subtext_y),
+  //         this.px2MM(336),
+  //         this.px2MM(80),
+  //       )
+  //       .fill();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#1A1A1D'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(14))
+  //       .text(
+  //         `${credit_score_comments}`,
+  //         this.px2MM(subtext_x + 20),
+  //         this.px2MM(subtext_y + 10),
+  //         {
+  //           width: this.px2MM(300),
+  //           height: this.px2MM(70),
+  //           align: 'left',
+  //           lineGap: this.px2MM(6),
+  //         },
+  //       );
+
+  //     let main_table_x = 591;
+  //     let main_table_y = 270;
+  //     let header_width = 192;
+  //     let header_h = 200;
+
+  //     ////Label
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .rect(
+  //         this.px2MM(main_table_x - 6),
+  //         this.px2MM(main_table_y - 42),
+  //         this.px2MM(230),
+  //         this.px2MM(42),
+  //       )
+  //       .fill();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .font('LeagueSpartan-Regular')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Affordability Check',
+  //         this.px2MM(main_table_x),
+  //         this.px2MM(main_table_y - 42 + 9),
+  //         { width: this.px2MM(224), height: this.px2MM(42), align: 'center' },
+  //       );
+
+  //     // Header Liabilities Type
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .rect(
+  //         this.px2MM(main_table_x - 6),
+  //         this.px2MM(main_table_y),
+  //         this.px2MM(6),
+  //         this.px2MM(header_h),
+  //       )
+  //       .fill();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .lineWidth(0.5)
+  //       .strokeColor(this.hex2RGB('#E9EAEE'))
+  //       .rect(
+  //         this.px2MM(main_table_x),
+  //         this.px2MM(main_table_y),
+  //         this.px2MM(header_width),
+  //         this.px2MM(header_h),
+  //       )
+  //       .fillAndStroke();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Liability Type',
+  //         this.px2MM(main_table_x + 20),
+  //         this.px2MM(main_table_y + header_h / 2 - 12),
+  //         {
+  //           width: this.px2MM(header_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     main_table_x += header_width;
+  //     header_width = 508.5;
+  //     header_h = 100;
+
+  //     // Header
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .lineWidth(0.5)
+  //       .strokeColor(this.hex2RGB('#E9EAEE'))
+  //       .rect(
+  //         this.px2MM(main_table_x),
+  //         this.px2MM(main_table_y),
+  //         this.px2MM(header_width),
+  //         this.px2MM(header_h),
+  //       )
+  //       .fillAndStroke();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Current Liability Distribution',
+  //         this.px2MM(main_table_x + 20),
+  //         this.px2MM(main_table_y + header_h / 2 - 24),
+  //         {
+  //           width: this.px2MM(header_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     main_table_y += header_h;
+  //     header_width = 254.25;
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .lineWidth(0.5)
+  //       .strokeColor(this.hex2RGB('#E9EAEE'))
+  //       .rect(
+  //         this.px2MM(main_table_x),
+  //         this.px2MM(main_table_y),
+  //         this.px2MM(header_width),
+  //         this.px2MM(header_h),
+  //       )
+  //       .fillAndStroke();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Outstanding',
+  //         this.px2MM(main_table_x + 20),
+  //         this.px2MM(main_table_y + header_h / 2 - 24),
+  //         {
+  //           width: this.px2MM(header_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     main_table_x += header_width;
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .lineWidth(0.5)
+  //       .strokeColor(this.hex2RGB('#E9EAEE'))
+  //       .rect(
+  //         this.px2MM(main_table_x),
+  //         this.px2MM(main_table_y),
+  //         this.px2MM(header_width),
+  //         this.px2MM(header_h),
+  //       )
+  //       .fillAndStroke();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'EMI',
+  //         this.px2MM(main_table_x + 20),
+  //         this.px2MM(main_table_y + header_h / 2 - 24),
+  //         {
+  //           width: this.px2MM(header_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     main_table_y = 270;
+  //     main_table_x += header_width;
+  //     header_width = 508.5;
+
+  //     // Header  Suggested Range
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .lineWidth(0.5)
+  //       .strokeColor(this.hex2RGB('#E9EAEE'))
+  //       .rect(
+  //         this.px2MM(main_table_x),
+  //         this.px2MM(main_table_y),
+  //         this.px2MM(header_width),
+  //         this.px2MM(header_h),
+  //       )
+  //       .fillAndStroke();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#1A1A1D'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Suggested Range',
+  //         this.px2MM(main_table_x + 20),
+  //         this.px2MM(main_table_y + header_h / 2 - 24),
+  //         {
+  //           width: this.px2MM(header_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     main_table_y += header_h;
+  //     header_width = 254.25;
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .lineWidth(0.5)
+  //       .strokeColor(this.hex2RGB('#E9EAEE'))
+  //       .rect(
+  //         this.px2MM(main_table_x),
+  //         this.px2MM(main_table_y),
+  //         this.px2MM(header_width),
+  //         this.px2MM(header_h),
+  //       )
+  //       .fillAndStroke();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'Loan Size',
+  //         this.px2MM(main_table_x + 20),
+  //         this.px2MM(main_table_y + header_h / 2 - 24),
+  //         {
+  //           width: this.px2MM(header_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     main_table_x += header_width;
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .lineWidth(0.5)
+  //       .strokeColor(this.hex2RGB('#E9EAEE'))
+  //       .rect(
+  //         this.px2MM(main_table_x),
+  //         this.px2MM(main_table_y),
+  //         this.px2MM(header_width),
+  //         this.px2MM(header_h),
+  //       )
+  //       .fillAndStroke();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         'EMI',
+  //         this.px2MM(main_table_x + 20),
+  //         this.px2MM(main_table_y + header_h / 2 - 24),
+  //         {
+  //           width: this.px2MM(header_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     ///////Body of the table
+
+  //     let col_x = 591;
+  //     let col_y = 470;
+  //     let col_width = 192;
+  //     let col_height = 100;
+
+  //     for (let i = 0; i < liability_management_table.length; i++) {
+  //       col_x = 591;
+  //       col_width = 192;
+
+  //       const bg_color = i % 2 == 0 ? '#F3F6F9' : '#FFFFFF';
+  //       pdf
+  //         .fillColor(this.hex2RGB('#000000'))
+  //         .rect(
+  //           this.px2MM(col_x - 6),
+  //           this.px2MM(col_y),
+  //           this.px2MM(6),
+  //           this.px2MM(col_height),
+  //         )
+  //         .fill();
+
+  //       pdf
+  //         .fillColor(this.hex2RGB(bg_color))
+  //         .lineWidth(0.5)
+  //         .strokeColor(this.hex2RGB('#E9EAEE'))
+  //         .rect(
+  //           this.px2MM(col_x),
+  //           this.px2MM(col_y),
+  //           this.px2MM(col_width),
+  //           this.px2MM(col_height),
+  //         )
+  //         .fillAndStroke();
+
+  //       pdf
+  //         .fillColor(this.hex2RGB('#000000'))
+  //         .font('LeagueSpartan-Regular')
+  //         .fontSize(this.px2MM(24))
+  //         .text(
+  //           `${liability_management_table[i]['liability_type']}`,
+  //           this.px2MM(col_x + 20),
+  //           this.px2MM(col_y + col_height / 2 - 12),
+  //           {
+  //             width: this.px2MM(col_width - 40),
+  //             height: this.px2MM(32),
+  //             align: 'left',
+  //           },
+  //         );
+
+  //       col_x += col_width;
+  //       col_width = 254.25;
+
+  //       pdf
+  //         .fillColor(this.hex2RGB(bg_color))
+  //         .lineWidth(0.5)
+  //         .strokeColor(this.hex2RGB('#E9EAEE'))
+  //         .rect(
+  //           this.px2MM(col_x),
+  //           this.px2MM(col_y),
+  //           this.px2MM(col_width),
+  //           this.px2MM(col_height),
+  //         )
+  //         .fillAndStroke();
+
+  //       const current_liability_distribution_outstanding_percentage =
+  //         this.format_cash2(
+  //           parseFloat(
+  //             liability_management_table[i][
+  //             'current_liability_distribution_outstanding_percentage'
+  //             ],
+  //           ),
+  //         );
+  //       pdf
+  //         .fillColor(this.hex2RGB('#000000'))
+  //         .font('LeagueSpartan-Regular')
+  //         .fontSize(this.px2MM(24))
+  //         .text(
+  //           `₹${current_liability_distribution_outstanding_percentage}`,
+  //           this.px2MM(col_x + 20),
+  //           this.px2MM(col_y + col_height / 2 - 12),
+  //           {
+  //             width: this.px2MM(col_width - 40),
+  //             height: this.px2MM(32),
+  //             align: 'center',
+  //           },
+  //         );
+
+  //       col_x += col_width;
+
+  //       pdf
+  //         .fillColor(this.hex2RGB(bg_color))
+  //         .lineWidth(0.5)
+  //         .strokeColor(this.hex2RGB('#E9EAEE'))
+  //         .rect(
+  //           this.px2MM(col_x),
+  //           this.px2MM(col_y),
+  //           this.px2MM(col_width),
+  //           this.px2MM(col_height),
+  //         )
+  //         .fillAndStroke();
+
+  //       const current_liability_distribution_emi_percentage = this.format_cash2(
+  //         parseFloat(
+  //           liability_management_table[i][
+  //           'current_liability_distribution_emi_percentage'
+  //           ],
+  //         ),
+  //       );
+  //       pdf
+  //         .fillColor(this.hex2RGB('#000000'))
+  //         .font('LeagueSpartan-Regular')
+  //         .fontSize(this.px2MM(24))
+  //         .text(
+  //           `₹${current_liability_distribution_emi_percentage}`,
+  //           this.px2MM(col_x + 20),
+  //           this.px2MM(col_y + col_height / 2 - 12),
+  //           {
+  //             width: this.px2MM(col_width - 40),
+  //             height: this.px2MM(32),
+  //             align: 'center',
+  //           },
+  //         );
+
+  //       col_x += col_width;
+
+  //       pdf
+  //         .fillColor(this.hex2RGB(bg_color))
+  //         .lineWidth(0.5)
+  //         .strokeColor(this.hex2RGB('#E9EAEE'))
+  //         .rect(
+  //           this.px2MM(col_x),
+  //           this.px2MM(col_y),
+  //           this.px2MM(col_width),
+  //           this.px2MM(col_height),
+  //         )
+  //         .fillAndStroke();
+
+  //       const suggested_loan_size_range = liability_management_table?.[i]?.[
+  //         'suggested_loan_size_range'
+  //       ]
+  //         .split('to')
+  //         .map((item) => `₹${this.format_cash2(parseFloat(item.trim()))}`)
+  //         .join(' to ');
+  //       pdf
+  //         .fillColor(this.hex2RGB('#000000'))
+  //         .font('LeagueSpartan-Regular')
+  //         .fontSize(this.px2MM(24))
+  //         .text(
+  //           `${suggested_loan_size_range}`,
+  //           this.px2MM(col_x + 20),
+  //           this.px2MM(col_y + col_height / 2 - 12),
+  //           {
+  //             width: this.px2MM(col_width - 40),
+  //             height: this.px2MM(32),
+  //             align: 'center',
+  //           },
+  //         );
+
+  //       col_x += col_width;
+
+  //       pdf
+  //         .fillColor(this.hex2RGB(bg_color))
+  //         .lineWidth(0.5)
+  //         .strokeColor(this.hex2RGB('#E9EAEE'))
+  //         .rect(
+  //           this.px2MM(col_x),
+  //           this.px2MM(col_y),
+  //           this.px2MM(col_width),
+  //           this.px2MM(col_height),
+  //         )
+  //         .fillAndStroke();
+
+  //       const suggested_emi_range = liability_management_table?.[i]?.[
+  //         'suggested_emi_range'
+  //       ]
+  //         .split('to')
+  //         .map((item) => `₹${this.format_cash2(parseFloat(item.trim()))}`)
+  //         .join(' to ');
+  //       pdf
+  //         .fillColor(this.hex2RGB('#000000'))
+  //         .font('LeagueSpartan-Regular')
+  //         .fontSize(this.px2MM(24))
+  //         .text(
+  //           `${suggested_emi_range}`,
+
+  //           this.px2MM(col_x + 20),
+  //           this.px2MM(col_y + col_height / 2 - 12),
+  //           {
+  //             width: this.px2MM(col_width - 40),
+  //             height: this.px2MM(32),
+  //             align: 'center',
+  //           },
+  //         );
+
+  //       col_y += col_height;
+  //     }
+
+  //     //////////////Total
+
+  //     col_x = 591;
+  //     col_width = 192;
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .rect(
+  //         this.px2MM(col_x - 6),
+  //         this.px2MM(col_y),
+  //         this.px2MM(6),
+  //         this.px2MM(col_height),
+  //       )
+  //       .fill();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#FFFFFF'))
+  //       .lineWidth(0.5)
+  //       .strokeColor(this.hex2RGB('#E9EAEE'))
+  //       .rect(
+  //         this.px2MM(col_x),
+  //         this.px2MM(col_y),
+  //         this.px2MM(1209),
+  //         this.px2MM(col_height),
+  //       )
+  //       .fillAndStroke();
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-Medium')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         `${liability_management_total['liability_type']}`,
+  //         this.px2MM(col_x + 20),
+  //         this.px2MM(col_y + col_height / 2 - 12),
+  //         {
+  //           width: this.px2MM(col_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'left',
+  //         },
+  //       );
+
+  //     col_x += col_width;
+  //     col_width = 254.25;
+
+  //     const current_liability_distribution_outstanding_total =
+  //       this.format_cash2(
+  //         parseFloat(
+  //           liability_management_total[
+  //           'current_liability_distribution_outstanding_percentage'
+  //           ],
+  //         ),
+  //       );
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-Medium')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         `₹${current_liability_distribution_outstanding_total}`,
+  //         this.px2MM(col_x + 20),
+  //         this.px2MM(col_y + col_height / 2 - 12),
+  //         {
+  //           width: this.px2MM(col_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     col_x += col_width;
+
+  //     const current_liability_distribution_emi_percentage = this.format_cash2(
+  //       parseFloat(
+  //         liability_management_total[
+  //         'current_liability_distribution_emi_percentage'
+  //         ],
+  //       ),
+  //     );
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-Medium')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         `₹${current_liability_distribution_emi_percentage}`,
+  //         this.px2MM(col_x + 20),
+  //         this.px2MM(col_y + col_height / 2 - 12),
+  //         {
+  //           width: this.px2MM(col_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     col_x += col_width;
+
+  //     const suggested_loan_size_range = liability_management_total?.[
+  //       'suggested_loan_size_range'
+  //     ]
+  //       .split('to')
+  //       .map((item) => `₹${this.format_cash2(parseFloat(item.trim()))}`)
+  //       .join(' to ');
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-Medium')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         `${suggested_loan_size_range}`,
+  //         this.px2MM(col_x + 20),
+  //         this.px2MM(col_y + col_height / 2 - 12),
+  //         {
+  //           width: this.px2MM(col_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     col_x += col_width;
+
+  //     const suggested_emi_range = liability_management_total?.[
+  //       'suggested_emi_range'
+  //     ]
+  //       .split('to')
+  //       .map((item) => `₹${this.format_cash2(parseFloat(item.trim()))}`)
+  //       .join(' to ');
+  //     pdf
+  //       .fillColor(this.hex2RGB('#000000'))
+  //       .font('LeagueSpartan-Medium')
+  //       .fontSize(this.px2MM(24))
+  //       .text(
+  //         `${suggested_emi_range}`,
+  //         this.px2MM(col_x + 20),
+  //         this.px2MM(col_y + col_height / 2 - 12),
+  //         {
+  //           width: this.px2MM(col_width - 40),
+  //           height: this.px2MM(32),
+  //           align: 'center',
+  //         },
+  //       );
+
+  //     //////Comments
+
+  //     let text_x = 120;
+
+  //     let text_y = 810;
+  //     let text_width = 1680;
+  //     let text_height = 42;
+
+  //     pdf
+  //       .fillColor(this.hex2RGB('#1A1A1D'))
+  //       .font('LeagueSpartan-SemiBold')
+  //       .fontSize(this.px2MM(32))
+  //       .text('Comments', this.px2MM(text_x), this.px2MM(text_y), {
+  //         width: this.px2MM(text_width),
+  //         height: this.px2MM(text_height),
+  //         align: 'left',
+  //       });
+
+  //     text_y += text_height + 20;
+
+  //     pdf.y = this.px2MM(text_y);
+
+  //     for (let i = 0; i < liability_management_comments.length; i++) {
+  //       pdf
+  //         .fillColor(this.hex2RGB('#000000'))
+  //         .rect(
+  //           this.px2MM(text_x),
+  //           this.px2MM(text_y + 7),
+  //           this.px2MM(10),
+  //           this.px2MM(10),
+  //         )
+  //         .fill();
+
+  //       pdf
+  //         .fillColor(this.hex2RGB('#1A1A1D'))
+  //         .font('LeagueSpartan-Regular')
+  //         .fontSize(this.px2MM(24))
+  //         .text(
+  //           `${liability_management_comments[i]}`,
+  //           this.px2MM(text_x + 30),
+  //           pdf.y,
+  //           {
+  //             width: this.px2MM(text_width),
+  //             lineGap: this.px2MM(10),
+  //             align: 'left',
+  //           },
+  //         );
+
+  //       pdf.y += this.px2MM(20);
+  //       text_y = this.mm2PX(pdf.y);
+  //     }
+
+  //     // index Text
+  //     this.index_text(pdf, '#1A1A1D');
+  //   } catch (err) {
+  //     Logger.error(err);
+  //   }
+  // }
 
 
   async tax_liability_potential_saving(pdf: PDFKit.PDFDocument, jsondata: any) {
@@ -2703,7 +2966,7 @@ export class FwpLatestService {
           { width: this.px2MM(420), height: this.px2MM(32), align: 'right' },
         );
 
-      let main_table_x = 120;
+      let main_table_x = 400;
       let main_table_y = 200;
       let header_width = 403;
       let header_h = 121;
@@ -2769,34 +3032,34 @@ export class FwpLatestService {
 
       // Header
 
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .rect(
-          this.px2MM(main_table_x),
-          this.px2MM(main_table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fill();
+      // pdf
+      //   .fillColor(this.hex2RGB('#FFFFFF'))
+      //   .rect(
+      //     this.px2MM(main_table_x),
+      //     this.px2MM(main_table_y),
+      //     this.px2MM(header_width),
+      //     this.px2MM(header_h),
+      //   )
+      //   .fill();
 
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(30))
-        .text(
-          'After Planning',
-          this.px2MM(main_table_x + 20),
-          this.px2MM(main_table_y + header_h / 2 - 24),
-          {
-            width: this.px2MM(header_width - 40),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
+      // pdf
+      //   .fillColor(this.hex2RGB('#1A1A1D'))
+      //   .font('LeagueSpartan-SemiBold')
+      //   .fontSize(this.px2MM(30))
+      //   .text(
+      //     'After Planning',
+      //     this.px2MM(main_table_x + 20),
+      //     this.px2MM(main_table_y + header_h / 2 - 24),
+      //     {
+      //       width: this.px2MM(header_width - 40),
+      //       height: this.px2MM(32),
+      //       align: 'center',
+      //     },
+      //   );
 
       // Table Body
 
-      main_table_x = 120;
+      main_table_x = 400;
       main_table_y += header_h;
       header_width = 403;
       header_h = 112.5;
@@ -2805,6 +3068,7 @@ export class FwpLatestService {
         'Tax Regime',
         'Deductions',
         'Taxable Income',
+        "Percentage",
         'Total Tax Payable',
       ];
 
@@ -2845,8 +3109,12 @@ export class FwpLatestService {
       /// Current Tax Regime
       for (let i = 0; i < tax_liability_comparison_current_table?.length; i++) {
         //Regime Name
+
+        let bgcolor = tax_liability_comparison_current_table?.[i]?.recommended
+          ? '#DEF7F1'
+          : '#FFFFFF';
         pdf
-          .fillColor(this.hex2RGB('#FFFFFF'))
+          .fillColor(this.hex2RGB(bgcolor))
           .rect(
             this.px2MM(main_table_x),
             this.px2MM(main_table_y),
@@ -2855,10 +3123,10 @@ export class FwpLatestService {
           )
           .fill();
 
-        if (tax_liability_comparison_current_table?.[i]?.opted) {
+        if (tax_liability_comparison_current_table?.[i]?.recommended) {
           const opted_h = 36;
           pdf
-            .fillColor(this.hex2RGB('#E9EAEE'))
+            .fillColor(this.hex2RGB('#5bd7ba'))
             .rect(
               this.px2MM(main_table_x),
               this.px2MM(main_table_y),
@@ -2872,7 +3140,7 @@ export class FwpLatestService {
             .font('LeagueSpartan-Medium')
             .fontSize(this.px2MM(18))
             .text(
-              'OPTED',
+              'RECOMMENDED',
               this.px2MM(main_table_x + 20),
               this.px2MM(main_table_y + opted_h / 2 - 9),
               {
@@ -2904,7 +3172,7 @@ export class FwpLatestService {
 
         //Deduction
         pdf
-          .fillColor(this.hex2RGB('#FFFFFF'))
+          .fillColor(this.hex2RGB(bgcolor))
           .rect(
             this.px2MM(main_table_x),
             this.px2MM(main_table_y),
@@ -2937,11 +3205,46 @@ export class FwpLatestService {
             },
           );
 
+
+        main_table_y += header_h;
+
+        //Percentage
+        pdf
+          .fillColor(this.hex2RGB(bgcolor))
+          .rect(
+            this.px2MM(main_table_x),
+            this.px2MM(main_table_y),
+            this.px2MM(header_width),
+            this.px2MM(header_h),
+          )
+          .fill();
+
+        const percentage = tax_liability_comparison_current_table?.[i]
+          ?.percentage
+          ? `${tax_liability_comparison_current_table?.[i]
+            ?.percentage} %`
+          : '-';
+        pdf
+          .fillColor(this.hex2RGB('#1A1A1D'))
+          .font('LeagueSpartan-Medium')
+          .fontSize(this.px2MM(24))
+          //TODO recheck the value key
+          .text(
+            `${percentage}`,
+            this.px2MM(main_table_x + 20),
+            this.px2MM(main_table_y + header_h / 2 - 12),
+            {
+              width: this.px2MM(header_width - 40),
+              height: this.px2MM(32),
+              align: 'center',
+            },
+          );
+
         main_table_y += header_h;
 
         //Taxable Income
         pdf
-          .fillColor(this.hex2RGB('#FFFFFF'))
+          .fillColor(this.hex2RGB(bgcolor))
           .rect(
             this.px2MM(main_table_x),
             this.px2MM(main_table_y),
@@ -2977,7 +3280,7 @@ export class FwpLatestService {
 
         //Taxable Payable
         pdf
-          .fillColor(this.hex2RGB('#FFFFFF'))
+          .fillColor(this.hex2RGB(bgcolor))
           .rect(
             this.px2MM(main_table_x),
             this.px2MM(main_table_y),
@@ -3014,1265 +3317,12 @@ export class FwpLatestService {
         main_table_y = 325;
       }
 
-      /// After Planning Tax Regime
-      for (
-        let i = 0;
-        i < tax_liability_comparison_after_planning_table?.length;
-        i++
-      ) {
-        let bgcolor = tax_liability_comparison_after_planning_table?.[i]
-          ?.recommended
-          ? '#DEF7F1'
-          : '#FFFFFF';
-        //Regime Name
-        pdf
-          .fillColor(this.hex2RGB(bgcolor))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        let color = tax_liability_comparison_after_planning_table?.[i]
-          ?.recommended
-          ? '#229479'
-          : '#1A1A1D';
-
-        if (tax_liability_comparison_after_planning_table?.[i]?.recommended) {
-          const recommendation_h = 36;
-          pdf
-            .fillColor(this.hex2RGB('#ACE4D7'))
-            .rect(
-              this.px2MM(main_table_x),
-              this.px2MM(main_table_y),
-              this.px2MM(header_width),
-              this.px2MM(recommendation_h),
-            )
-            .fill();
-
-          pdf
-            .fillColor(this.hex2RGB('#4B4C51'))
-            .font('LeagueSpartan-Medium')
-            .fontSize(this.px2MM(18))
-            .text(
-              'RECOMMENDED',
-              this.px2MM(main_table_x + 20),
-              this.px2MM(main_table_y + recommendation_h / 2 - 9),
-              {
-                width: this.px2MM(header_width - 40),
-                height: this.px2MM(32),
-                characterSpacing: this.px2MM(2),
-                align: 'center',
-              },
-            );
-        }
-
-        pdf
-          .fillColor(this.hex2RGB(color))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(30))
-          .text(
-            `${tax_liability_comparison_after_planning_table?.[i]?.tax_regime
-              ?.split(' ')[0]
-              .toUpperCase()}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        main_table_y += header_h;
-
-        //Deduction
-        pdf
-          .fillColor(this.hex2RGB(bgcolor))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        const deduction = tax_liability_comparison_after_planning_table?.[i]
-          ?.deductions
-          ? `₹ ${this.format_amt_number(
-            parseFloat(
-              tax_liability_comparison_after_planning_table?.[i]?.deductions,
-            ),
-          )}`
-          : '-';
-        pdf
-          .fillColor(this.hex2RGB('#1A1A1D'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(24))
-          //TODO recheck the value key
-          .text(
-            `${deduction}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2 - 12),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        main_table_y += header_h;
-
-        //Taxable Income
-        pdf
-          .fillColor(this.hex2RGB(bgcolor))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        const taxable_income = tax_liability_comparison_after_planning_table?.[
-          i
-        ]?.taxable_income
-          ? `₹ ${this.format_amt_number(
-            parseFloat(
-              tax_liability_comparison_after_planning_table?.[i]
-                ?.taxable_income,
-            ),
-          )}`
-          : '-';
-        pdf
-          .fillColor(this.hex2RGB('#1A1A1D'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(24))
-          //TODO recheck the value key
-          .text(
-            `${taxable_income}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2 - 12),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-        main_table_y += header_h;
-
-        //Taxable Payable
-        pdf
-          .fillColor(this.hex2RGB(bgcolor))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        const total_tax_payable =
-          tax_liability_comparison_after_planning_table?.[i]?.total_tax_payable
-            ? `₹ ${this.format_amt_number(
-              parseFloat(
-                tax_liability_comparison_after_planning_table?.[i]
-                  ?.total_tax_payable,
-              ),
-            )}`
-            : '-';
-        pdf
-          .fillColor(this.hex2RGB('#1A1A1D'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(24))
-          //TODO recheck the value key
-          .text(
-            `${total_tax_payable}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2 - 12),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        main_table_x += header_width;
-        main_table_y = 325;
-      }
-
-      const footer_height = 164;
-      const footer_y = 816;
-      const footer_x = 370;
-      const footer_width = 1200;
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .rect(
-          this.px2MM(footer_x),
-          this.px2MM(footer_y),
-          this.px2MM(footer_width),
-          this.px2MM(footer_height),
-        )
-        .fill();
-
-      let subtitle_x = footer_x + 40;
-      let subtitle_y = footer_y + 40;
-      let subtitle_width = 250;
-      let subtitle_height = 32;
-
-      pdf
-        .fillColor(this.hex2RGB('#898B90'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Current Payable Tax',
-          this.px2MM(subtitle_x),
-          this.px2MM(subtitle_y),
-          {
-            width: this.px2MM(subtitle_width),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      subtitle_y += subtitle_height;
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(35))
-        //TODO: Change the value
-        .text(
-          '₹ 12,22,4434',
-          this.px2MM(subtitle_x),
-          this.px2MM(subtitle_y + 16),
-          { width: this.px2MM(250), height: this.px2MM(32), align: 'center' },
-        );
-      subtitle_x += subtitle_width + 40;
-      pdf.image(
-        path.join(cwd, 'src/lib/shared/assets/images/icons/minus.png'),
-        this.px2MM(subtitle_x),
-        this.px2MM(subtitle_y + 5),
-        { width: this.px2MM(40), height: this.px2MM(40) },
-      );
-
-      subtitle_y = footer_y + 40;
-      subtitle_x += 80;
-      subtitle_width = 280;
-
-      pdf
-        .fillColor(this.hex2RGB('#898B90'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Recommended Payable Tax',
-          this.px2MM(subtitle_x),
-          this.px2MM(subtitle_y),
-          {
-            width: this.px2MM(subtitle_width),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-      subtitle_y += subtitle_height;
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(35))
-        //TODO: Change the value
-        .text(
-          '₹ 10,89,444',
-          this.px2MM(subtitle_x),
-          this.px2MM(subtitle_y + 16),
-          {
-            width: this.px2MM(subtitle_width),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      subtitle_x += subtitle_width + 40;
-      pdf.image(
-        path.join(cwd, 'src/lib/shared/assets/images/icons/equal.png'),
-        this.px2MM(subtitle_x),
-        this.px2MM(subtitle_y + 5),
-        { width: this.px2MM(40), height: this.px2MM(40) },
-      );
-
-      subtitle_y = footer_y + 37;
-      subtitle_x += 80;
-      subtitle_width = 400;
-
-      pdf
-        .fillColor(this.hex2RGB('#65676D'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(40))
-        .text(
-          'Potential Tax ',
-          this.px2MM(subtitle_x),
-          this.px2MM(subtitle_y),
-          {
-            width: this.px2MM(subtitle_width),
-            height: this.px2MM(32),
-            align: 'left',
-            continued: true,
-          },
-        );
-      pdf
-        .fontSize(this.px2MM(40))
-        .font('LeagueSpartan-SemiBold')
-        .fillColor(this.hex2RGB('#229479'))
-        .text('Savings', { continued: false });
-
-      subtitle_y += subtitle_height;
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(56))
-        //TODO: Change the value
-        .text(
-          '₹ 1,32,990',
-          this.px2MM(subtitle_x),
-          this.px2MM(subtitle_y + 16),
-          {
-            width: this.px2MM(subtitle_width),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-    } catch (error) {
-      Logger.error(error);
-    }
-  }
-
-  async tax_deduction_exemption_template(pdf: PDFKit.PDFDocument) {
-    try {
-      pdf.addPage();
-      pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
-      pdf.scale(this.scale_pdf() || 1.6572658674215652);
-
-      pdf
-        .fillColor(this.hex2RGB('#FCF8ED'))
-        .rect(0, 0, this.px2MM(1920), this.px2MM(1080))
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .rect(0, this.px2MM(80), this.px2MM(15), this.px2MM(84))
-        .fill();
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(60))
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .text('Tax Deduction & Exemption', this.px2MM(120), this.px2MM(92), {
-          width: this.px2MM(807),
-          height: this.px2MM(84),
-          align: 'left',
-        });
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .text(`Old Regime`, this.px2MM(1380), this.px2MM(114), {
-          width: this.px2MM(420),
-          height: this.px2MM(32),
-          align: 'right',
-        });
-
-      let table_x = 120;
-      let table_y = 200;
-
-      let header_width = 1319;
-      let header_h = 121;
-
-      const rows = [
-        'Deductions & Exemptions',
-        'Max. Deduction',
-        'Current Utilisation',
-        'Suggested Utilisation',
-      ];
-      const rows_width = [623, 178, 205, 235];
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .rect(
-          this.px2MM(table_x),
-          this.px2MM(table_y),
-          this.px2MM(header_width),
-          this.px2MM(header_h),
-        )
-        .fill();
-
-      table_x += 40;
-
-      for (let i = 0; i < rows?.length; i++) {
-        pdf
-          .fillColor(this.hex2RGB('#898B90'))
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(24))
-          .text(
-            `${rows[i]}`,
-            this.px2MM(table_x),
-            this.px2MM(table_y + header_h / 2 - 12),
-            {
-              width: this.px2MM(rows_width[i]),
-              height: this.px2MM(32),
-              align: i == 0 ? 'left' : 'right',
-            },
-          );
-        table_x += rows_width[i];
-      }
-
-      const chart_box_x = 1479;
-      const chart_box_y = 204;
-      const chart_box_width = 321;
-      const chart_box_height = 725;
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .rect(
-          this.px2MM(chart_box_x),
-          this.px2MM(chart_box_y),
-          this.px2MM(chart_box_width),
-          this.px2MM(chart_box_height),
-        )
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .text(
-          `Utilisation of Deductions/Exemptions`,
-          this.px2MM(chart_box_x + 40),
-          this.px2MM(chart_box_y + 40),
-          {
-            width: this.px2MM(chart_box_width - 80),
-            lineGap: this.px2MM(7),
-            align: 'center',
-          },
-        );
-
-      let chart_main_box_x = chart_box_x + 80.5;
-      let chart_main_box_y = chart_box_y + 120;
-
-      let chart_block_max_height = 476;
-      let chart_block_width = 80;
-
-      //TODO: Change the value
-      let temp_current_val = parseInt('15002000');
-      let temp_recommend_val = parseInt('20002000');
-      let big_block_val =
-        temp_current_val > temp_recommend_val
-          ? temp_current_val
-          : temp_recommend_val;
-
-      let current_block_height =
-        (temp_current_val / big_block_val) * chart_block_max_height;
-      let current_block_y_shift = chart_block_max_height - current_block_height;
-
-      const format_current_val = `₹ ${this.format_cash2(temp_current_val)}`;
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          `${format_current_val}`,
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y + current_block_y_shift),
-          {
-            width: this.px2MM(chart_block_width),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      pdf
-        .fillColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y + current_block_y_shift + 45),
-          this.px2MM(chart_block_width),
-          this.px2MM(current_block_height),
-        )
-        .fill();
-
-      chart_main_box_x += chart_block_width;
-      let recommend_block_height =
-        (temp_recommend_val / big_block_val) * chart_block_max_height;
-      let recommend_block_y_shift =
-        chart_block_max_height - recommend_block_height;
-
-      const format_recommend_val = `₹ ${this.format_cash2(temp_recommend_val)}`;
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          `${format_recommend_val}`,
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y + recommend_block_y_shift),
-          {
-            width: this.px2MM(chart_block_width),
-            height: this.px2MM(32),
-            align: 'center',
-          },
-        );
-
-      pdf
-        .fillColor(this.hex2RGB('#90BEF8'))
-        .rect(
-          this.px2MM(chart_main_box_x),
-          this.px2MM(chart_main_box_y + recommend_block_y_shift + 45),
-          this.px2MM(chart_block_width),
-          this.px2MM(recommend_block_height),
-        )
-        .fill();
-
-      //legend
-
-      let legend_x = chart_box_x + 40;
-      let legend_y = chart_box_y + 666.5;
-      let legend_width = 12;
-      let legend_height = 12;
-
-      pdf
-        .fillColor(this.hex2RGB('#E9EAEE'))
-        .rect(
-          this.px2MM(legend_x),
-          this.px2MM(legend_y),
-          this.px2MM(legend_height),
-          this.px2MM(legend_height),
-        )
-        .fill();
-
-      legend_x += legend_width + 8;
-      legend_y -= 3;
-      legend_width = 65;
-      legend_height = 25;
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(18))
-        .text(`Current`, this.px2MM(legend_x), this.px2MM(legend_y), {
-          width: this.px2MM(legend_width),
-          height: this.px2MM(legend_height),
-          align: 'left',
-        });
-
-      legend_x += legend_width + 30;
-      legend_width = 12;
-      legend_height = 12;
-      pdf
-        .fillColor(this.hex2RGB('#90BEF8'))
-        .rect(
-          this.px2MM(legend_x),
-          this.px2MM(legend_y),
-          this.px2MM(legend_height),
-          this.px2MM(legend_height),
-        )
-        .fill();
-
-      legend_x += legend_width + 8;
-      legend_y -= 3;
-      legend_width = 120;
-      legend_height = 25;
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(18))
-        .text(`Recommended`, this.px2MM(legend_x), this.px2MM(legend_y), {
-          width: this.px2MM(legend_width),
-          height: this.px2MM(legend_height),
-          align: 'left',
-        });
-
-      legend_x += legend_width + 40;
-
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(18))
-        .text(
-          `* Includes only the increase in investment`,
-          this.px2MM(120),
-          this.px2MM(1035),
-          { width: this.px2MM(1680), height: this.px2MM(25), align: 'left' },
-        );
-    } catch (err) {
-      Logger.error(err);
-    }
-  }
-
-  async tax_deduction_exemption(pdf: PDFKit.PDFDocument, jsondata: any) {
-    try {
-      const tax_planning = jsondata?.tax_planning;
-      if (!tax_planning) return;
-
-      const tax_deduction_exemption_table =
-        tax_planning?.tax_deduction_exemption_table;
-
-      /// table Body
-
-      let table_x = 120;
-      let table_y = 288;
-      const header_width = 1319;
-      const header_h = 112.5;
-
-      for (let i = 0; i < tax_deduction_exemption_table?.length; i++) {
-        if (i === 0 || table_y > 745) {
-          await this.tax_deduction_exemption_template(pdf);
-          table_y = 288;
-        }
-
-        const cols = [
-          'tax_class',
-          'max_deduction',
-          'current_utilisation',
-          'suggested_utilisation',
-        ];
-        const cols_width = [623, 178, 205, 235];
-
-        // row Block
-        pdf
-          .fillColor(this.hex2RGB('#FFFFFF'))
-          .rect(
-            this.px2MM(table_x),
-            this.px2MM(table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-        table_x += 40;
-
-        // Table Body
-        for (let j = 0; j < cols?.length; j++) {
-          let direction = j === 0 ? 'left' : 'right';
-          let col_val = parseFloat(
-            tax_deduction_exemption_table?.[i]?.[cols[j]],
-          )
-            ? `₹ ${this.format_amt_number(
-              parseFloat(tax_deduction_exemption_table?.[i]?.[cols[j]]),
-            )}`
-            : tax_deduction_exemption_table?.[i]?.[cols[j]];
-          pdf
-            .fillColor(this.hex2RGB('#1A1A1D'))
-            .font('LeagueSpartan-SemiBold')
-            .fontSize(this.px2MM(20))
-            .text(
-              `${col_val}`,
-              this.px2MM(table_x),
-              this.px2MM(table_y + header_h / 2 - 28),
-              {
-                width: this.px2MM(cols_width[j]),
-                height: this.px2MM(32),
-                align: direction,
-              },
-            );
-          table_x += cols_width[j];
-        }
-
-        table_x = 120;
-
-        pdf
-          .fillColor(this.hex2RGB('#898B90'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(18))
-          .text(
-            `${tax_deduction_exemption_table?.[i]?.tax_class_sub_val}`,
-            this.px2MM(table_x + 40),
-            this.px2MM(table_y + header_h / 2 + 12),
-            {
-              width: this.px2MM(cols_width[0]),
-              height: this.px2MM(25),
-              align: 'left',
-            },
-          );
-        table_x += cols_width[0] + 430;
-        pdf
-          .fillColor(this.hex2RGB('#649DE5'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(18))
-          //TODO: Change the value
-          .text(
-            `Additional ₹ 10,000*`,
-            this.px2MM(table_x),
-            this.px2MM(table_y + header_h / 2 + 12),
-            {
-              width: this.px2MM(cols_width[3]),
-              height: this.px2MM(25),
-              align: 'right',
-            },
-          );
-
-        table_y += header_h;
-        table_x = 120;
-
-        if (i === tax_deduction_exemption_table?.length - 1) {
-          //table Footer  Line
-          pdf
-            .fillColor(this.hex2RGB('#1A1A1D'))
-            .rect(
-              this.px2MM(table_x + 40),
-              this.px2MM(table_y),
-              this.px2MM(1239),
-              this.px2MM(1),
-            )
-            .fill();
-
-          /// Table Footer  Block
-          pdf
-            .fillColor(this.hex2RGB('#FFFFFF'))
-            .rect(
-              this.px2MM(table_x),
-              this.px2MM(table_y),
-              this.px2MM(header_width),
-              this.px2MM(header_h + 56),
-            )
-            .fill();
-
-          let total_current_x = table_x + cols_width[0] + cols_width[1] + 40;
-          pdf
-            .fillColor(this.hex2RGB('#1A1A1D'))
-            .font('LeagueSpartan-SemiBold')
-            .fontSize(this.px2MM(24))
-            //TODO: Change the value
-            .text(
-              `₹ 7,00,000`,
-              this.px2MM(total_current_x),
-              this.px2MM(table_y + header_h / 2 - 28),
-              {
-                width: this.px2MM(cols_width[2]),
-                height: this.px2MM(32),
-                align: 'right',
-              },
-            );
-
-          let total_suggest_x =
-            table_x + cols_width[0] + cols_width[1] + cols_width[2] + 40;
-          pdf
-            .fillColor(this.hex2RGB('#649DE5'))
-            .font('LeagueSpartan-SemiBold')
-            .fontSize(this.px2MM(24))
-            //TODO: Change the value
-            .text(
-              `₹ 7,00,000`,
-              this.px2MM(total_suggest_x),
-              this.px2MM(table_y + header_h / 2 - 28),
-              {
-                width: this.px2MM(cols_width[3]),
-                height: this.px2MM(32),
-                align: 'right',
-              },
-            );
-          table_y += header_h - 24;
-          table_x = 120;
-          pdf
-            .fillColor(this.hex2RGB('#898B90'))
-            .font('LeagueSpartan-Light')
-            .fontSize(this.px2MM(18))
-            .text(
-              `You can save `,
-              this.px2MM(table_x + 273),
-              this.px2MM(table_y),
-              {
-                width: this.px2MM(1000),
-                align: 'left',
-                continued: true,
-              },
-            )
-            .fillColor(this.hex2RGB('#229479'))
-            .font('LeagueSpartan-SemiBold')
-            .fontSize(this.px2MM(24))
-            .text(
-              ` ₹ 10,000`, //TODO: Change the value
-              { continued: true },
-            )
-            .fillColor(this.hex2RGB('#898B90'))
-            .font('LeagueSpartan-Light')
-            .fontSize(this.px2MM(18))
-            .text(`  in taxes with an additional investment/insurance of  `, {
-              continued: true,
-            })
-            .fillColor(this.hex2RGB('#229479'))
-            .font('LeagueSpartan-SemiBold')
-            .fontSize(this.px2MM(24))
-            .text(
-              ` ₹ 10,000`, //TODO: Change the value
-              { continued: false },
-            );
-        }
-      }
-    } catch (err) {
-      Logger.error(err);
-    }
-  }
-
-  async tax_liability_potential_saving_page2(
-    pdf: PDFKit.PDFDocument,
-    jsondata: any,
-  ) {
-    try {
-      const tax_planning = jsondata?.tax_planning;
-      if (!tax_planning) return;
-
-      const tax_liability_comparison_table =
-        tax_planning?.tax_liability_potential_saving
-          ?.tax_liability_comparison_table?.after_planning;
-      const action_of_this_year = tax_planning?.action_of_this_year;
-
-      pdf.addPage();
-      pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
-      pdf.scale(this.scale_pdf() || 1.6572658674215652);
-      pdf
-        .fillColor(this.hex2RGB('#FCF8ED'))
-        .rect(0, 0, this.px2MM(1920), this.px2MM(1080))
-        .fill();
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .rect(0, this.px2MM(80), this.px2MM(15), this.px2MM(84))
-        .fill();
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(60))
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .text(
-          'Tax Liability & Potential Savings',
-          this.px2MM(120),
-          this.px2MM(92),
-          { width: this.px2MM(807), height: this.px2MM(84), align: 'left' },
-        );
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        //TODO: Change to correct text
-        .text(
-          `${tax_planning?.financial_year}`,
-          this.px2MM(1380),
-          this.px2MM(114),
-          { width: this.px2MM(420), height: this.px2MM(32), align: 'right' },
-        );
-
-      let main_table_x = 120;
-      let main_table_y = 240;
-      let header_width = 311;
-      let header_h = 121;
-
-      const rows = [
-        'Tax Camparison',
-        'Deductions',
-        'Taxable Income',
-        'Total Tax Payable',
-      ];
-
-      for (let i = 0; i < rows.length; i++) {
-        let bgcolor = i == 0 ? '#F3F6F9' : '#FFFFFF';
-        let color = i == 0 ? '#000000' : '#898B90';
-        header_h = i == 0 ? 121 : 150;
-        let font = i == 0 ? 'LeagueSpartan-Medium' : 'LeagueSpartan-Regular';
-        pdf
-          .fillColor(this.hex2RGB(bgcolor))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        pdf
-          .fillColor(this.hex2RGB(color))
-          .font(font)
-          .fontSize(this.px2MM(24))
-          .text(
-            `${rows[i]}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2 - 12),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'left',
-            },
-          );
-        main_table_y += header_h;
-      }
-
-      main_table_x += header_width;
-      main_table_y = 240;
-      header_width = 322.5;
-
-      for (let i = 0; i < tax_liability_comparison_table.length; i++) {
-        let header_h = 121;
-
-        let bgcolor = tax_liability_comparison_table?.[i]?.recommended
-          ? '#DEF7F1'
-          : '#FFFFFF';
-        //Regime Name
-        pdf
-          .fillColor(this.hex2RGB('#F3F6F9'))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(30))
-          .text(
-            `${tax_liability_comparison_table?.[i]?.tax_regime}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2 - 20),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        main_table_y += header_h;
-        header_h = 150;
-        //Deduction
-        pdf
-          .fillColor(this.hex2RGB(bgcolor))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        if (tax_liability_comparison_table?.[i]?.recommended) {
-          const recommendation_h = 36;
-          pdf
-            .fillColor(this.hex2RGB('#ACE4D7'))
-            .rect(
-              this.px2MM(main_table_x),
-              this.px2MM(main_table_y),
-              this.px2MM(header_width),
-              this.px2MM(recommendation_h),
-            )
-            .fill();
-
-          pdf
-            .fillColor(this.hex2RGB('#000000'))
-            .font('LeagueSpartan-Medium')
-            .fontSize(this.px2MM(18))
-            .text(
-              'RECOMMENDED',
-              this.px2MM(main_table_x + 20),
-              this.px2MM(main_table_y + recommendation_h / 2 - 9),
-              {
-                width: this.px2MM(header_width - 40),
-                height: this.px2MM(32),
-                characterSpacing: this.px2MM(2),
-                align: 'center',
-              },
-            );
-        }
-
-        const deduction = tax_liability_comparison_table?.[i]
-          ?.standard_deduction
-          ? `₹ ${this.format_amt_number(
-            parseFloat(
-              tax_liability_comparison_table?.[i]?.standard_deduction,
-            ),
-          )}`
-          : '-';
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(24))
-          //TODO recheck the value key
-          .text(
-            `${deduction}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2 - 12),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        main_table_y += header_h;
-
-        //Taxable Income
-        pdf
-          .fillColor(this.hex2RGB(bgcolor))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        const taxable_income = tax_liability_comparison_table?.[i]
-          ?.taxable_income
-          ? `₹ ${this.format_amt_number(
-            parseFloat(tax_liability_comparison_table?.[i]?.taxable_income),
-          )}`
-          : '-';
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(24))
-          //TODO recheck the value key
-          .text(
-            `${taxable_income}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2 - 12),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-        main_table_y += header_h;
-
-        //Taxable Payable
-        pdf
-          .fillColor(this.hex2RGB(bgcolor))
-          .rect(
-            this.px2MM(main_table_x),
-            this.px2MM(main_table_y),
-            this.px2MM(header_width),
-            this.px2MM(header_h),
-          )
-          .fill();
-
-        const total_tax_payable = tax_liability_comparison_table?.[i]
-          ?.total_tax_payable
-          ? `₹ ${this.format_amt_number(
-            parseFloat(
-              tax_liability_comparison_table?.[i]?.total_tax_payable,
-            ),
-          )}`
-          : '-';
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Medium')
-          .fontSize(this.px2MM(24))
-          //TODO recheck the value key
-          .text(
-            `${total_tax_payable}`,
-            this.px2MM(main_table_x + 20),
-            this.px2MM(main_table_y + header_h / 2 - 12),
-            {
-              width: this.px2MM(header_width - 40),
-              height: this.px2MM(32),
-              align: 'center',
-            },
-          );
-
-        main_table_x += header_width;
-        main_table_y = 240;
-      }
-
-      let text_x = 1136;
-      let text_y = 240;
-      let text_width = 664;
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(32))
-        .text(`Action fo this year`, this.px2MM(text_x), this.px2MM(text_y), {
-          width: this.px2MM(text_width),
-          height: this.px2MM(42),
-          align: 'left',
-        });
-
-      text_y += 62;
-
-      pdf.y = this.px2MM(text_y);
-      for (let i = 0; i < action_of_this_year.length; i++) {
-        pdf
-          .fillColor(this.hex2RGB('#000000'))
-          .font('LeagueSpartan-Regular')
-          .fontSize(this.px2MM(30))
-          .text(`${action_of_this_year[i]}`, this.px2MM(text_x), pdf.y, {
-            width: this.px2MM(text_width),
-            align: 'left',
-            lineGap: this.px2MM(6),
-          });
-        pdf.y += this.px2MM(24);
-      }
-
-      const footer_height = 80;
-      const footer_y = 900;
-      const footer_x = 140;
-      const footer_width = 1640;
-
-      pdf
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .rect(
-          this.px2MM(footer_x),
-          this.px2MM(footer_y),
-          this.px2MM(footer_width),
-          this.px2MM(footer_height),
-        )
-        .fill();
-
-      let subtitle_x = footer_x + 40;
-      let subtitle_y = footer_y + 24;
-      let subtitle_width = 1560;
-      let subtitle_height = 32;
-
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(24))
-        .text(
-          'You may share the exemptions & deduction details with your Advisor. This will help us plan your tax strategy and maximize your savings.',
-          this.px2MM(subtitle_x),
-          this.px2MM(subtitle_y),
-          {
-            width: this.px2MM(subtitle_width),
-            height: this.px2MM(subtitle_height),
-            align: 'center',
-          },
-        );
     } catch (error) {
       Logger.error(error);
     }
   }
 
 
-  disclaimer(pdf: PDFKit.PDFDocument) {
-    try {
-      const disclaimers = [
-        'This report is based on the data and presumptions supplied by you (client/ user/ member).',
-        'This report is designed to assess your present financial condition and recommend planning ideas and concepts that may be beneficial. This report aims to demonstrate how well-established financial planning principles can enhance your existing financial situation. This report does not imply a recommendation of any specific method, but rather offers broad, general advice on the benefits of a few financial planning principles.',
-        'The reports give estimates based on multiple hypotheses; thus they are purely speculative and do not represent assurances of investment returns. Before making any financial decisions or adopting any transactions or plans, you should speak with your tax and/or legal counsel and solely decide on the execution and implementation.',
-        '1 Finance Private Limited or any of its representatives will not be liable or responsible for any losses or damages incurred by the client/user/member as a result of this report.',
-        'Prices mentioned in this report may have come from sources we believe to be dependable, but they are not guaranteed. It’s crucial to understand that past performance does not guarantee future outcomes and that actual results may vary from the forecasts in this report.',
-        'Unless changes to your financial or personal situation necessitate a more frequent review, we advise that you evaluate your plan once a quarter. Please be aware that some discrepancies could occur due to different calculation methods.',
-      ];
-
-      pdf.addPage();
-      pdf.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
-      pdf.scale(this.scale_pdf() || 1.6572658674215652);
-      pdf
-        .fillColor(this.hex2RGB('#FCF8ED'))
-        .rect(0, 0, this.px2MM(1920), this.px2MM(1080))
-        .fill();
-
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(60))
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .text('Disclaimer', this.px2MM(140), this.px2MM(78));
-
-      pdf
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(36))
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .text(
-          'The Disclaimer page should be read in conjunction with this report.',
-          this.px2MM(140),
-          this.px2MM(202),
-        );
-
-      pdf.moveTo(this.px2MM(140), this.px2MM(128));
-      pdf.y = this.px2MM(263);
-      for (let i = 0; i < disclaimers.length; i++) {
-        pdf
-          .font('LeagueSpartan-Light')
-          .fontSize(this.px2MM(24))
-          .fillColor(this.hex2RGB('#000000'))
-          .text(disclaimers[i], this.px2MM(140), pdf.y + this.px2MM(24), {
-            width: this.px2MM(1640),
-            lineGap: this.px2MM(6),
-            align: 'left',
-          });
-      }
-
-      const url_y = pdf.y;
-
-      pdf
-        .fillColor(this.hex2RGB('#000000'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .text(
-          'Investment in securities market are subject to market risks. Read all the related documents carefully before investing.' +
-          '\nRegistration granted by SEBI, membership of BASL and certification from National Institute of Securities Markets (NISM) in no way guarantee performance of the intermediary or provide any assurance of returns to investors.',
-          this.px2MM(140),
-          url_y + this.px2MM(50),
-          { width: this.px2MM(1640), lineGap: this.px2MM(4), align: 'left' },
-        );
-
-      let register_y = pdf.y + this.px2MM(50);
-
-      //TODO: Change the registration number
-      const registration_num = 'INA000017523';
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        //TODO: Change the registration number
-        .text(
-          `SEBI RIA Registration No : ${registration_num}`,
-          this.px2MM(140),
-          register_y,
-          { width: this.px2MM(850), lineGap: this.px2MM(4), align: 'left' },
-        );
-
-      //TODO: Change the registration Date
-      const register_date = 'December 22, 2022-Perpetual';
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        //TODO: Change the registration Date
-        .text(
-          `Validity of Registration : ${register_date}`,
-          this.px2MM(900),
-          register_y,
-          { width: this.px2MM(860), lineGap: this.px2MM(4), align: 'right' },
-        );
-
-      register_y = pdf.y + this.px2MM(10);
-
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        //TODO: Change the registration number
-        .text(`BASL Registration No : `, this.px2MM(140), register_y, {
-          width: this.px2MM(850),
-          lineGap: this.px2MM(4),
-          align: 'left',
-        });
-
-      const type_registration = 'Non-Individual';
-      pdf
-        .fillColor(this.hex2RGB('#1A1A1D'))
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        //TODO: Change the registration Date
-        .text(
-          `Type of Registration : ${type_registration}`,
-          this.px2MM(900),
-          register_y,
-          { width: this.px2MM(860), lineGap: this.px2MM(4), align: 'right' },
-        );
-    } catch (err) {
-      Logger.error(err);
-    }
-  }
 
   last_page(pdf: PDFKit.PDFDocument) {
     try {
@@ -4298,142 +3348,132 @@ export class FwpLatestService {
         .font('LeagueSpartan-SemiBold')
         .fontSize(this.px2MM(48))
         .fillColor(this.hex2RGB('#FFFFFF'))
-        .text('1 Finance Private Limited', this.px2MM(700), this.px2MM(308), {
+        .text('FinAstra', this.px2MM(700), this.px2MM(308), {
           width: this.px2MM(520),
           align: 'center',
         });
 
-      pdf
-        .font('LeagueSpartan-Medium')
-        .fontSize(this.px2MM(32))
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .text('Office Address', this.px2MM(861.5), this.px2MM(415), {
-          width: this.px2MM(197),
-          height: this.px2MM(44),
-          border: 0,
-          align: 'center',
-        });
 
       pdf
         .font('LeagueSpartan-Light')
         .fontSize(this.px2MM(40))
         .fillColor(this.hex2RGB('#FFFFFF'))
         .text(
-          'Unit No. 1101 & 1102, 11th Floor, B - Wing, \nLotus Corporate Park, Goregaon (E), Mumbai-400063,',
-          this.px2MM(518),
+          'Nitin Gupta   |   Nikhil Bhosele   |   Ruthvik Salunkhe   |   Samyak Doshi',
+          this.px2MM(418),
           this.px2MM(460),
           {
-            width: this.px2MM(876),
+            width: this.px2MM(1100),
             lineGap: this.px2MM(8),
             border: 0,
             align: 'center',
           },
         );
 
-      pdf.image(
-        path.join(cwd, 'src/lib/shared/assets/images/icons/gmail.png'),
-        this.px2MM(676.5),
-        this.px2MM(602),
-        { width: this.px2MM(32), height: this.px2MM(32) },
-      );
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(25.33))
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .text('care@1finance.co.in', this.px2MM(724.5), this.px2MM(602), {
-          border: 0,
-          align: 'left',
-        });
+      // pdf.image(
+      //   path.join(cwd, 'src/lib/shared/assets/images/icons/gmail.png'),
+      //   this.px2MM(676.5),
+      //   this.px2MM(602),
+      //   { width: this.px2MM(32), height: this.px2MM(32) },
+      // );
+      // pdf
+      //   .font('LeagueSpartan-SemiBold')
+      //   .fontSize(this.px2MM(25.33))
+      //   .fillColor(this.hex2RGB('#FFFFFF'))
+      //   .text('care@1finance.co.in', this.px2MM(724.5), this.px2MM(602), {
+      //     border: 0,
+      //     align: 'left',
+      //   });
 
-      pdf.image(
-        path.join(cwd, 'src/lib/shared/assets/images/icons/globe.png'),
-        this.px2MM(966.5),
-        this.px2MM(602),
-        { width: this.px2MM(32), height: this.px2MM(32) },
-      );
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .text('https://1finance.co.in', this.px2MM(1014.5), this.px2MM(602), {
-          border: 0,
-          align: 'left',
-        });
-      pdf
-        .font('LeagueSpartan-SemiBold')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .text(
-          'Corresponding SEBI Local Office Address',
-          this.px2MM(230),
-          this.px2MM(674),
-          {
-            width: this.px2MM(1387),
-            align: 'center',
-            continued: true,
-            lineGap: this.px2MM(8),
-          },
-        )
-        .font('LeagueSpartan-Medium')
-        .text(
-          '\nSecurities and Exchange Board of India, Mumbai Regional Office, Mittal Court, A Wing, Gr. Floor, 224, Nariman Point, Mumbai - 400021',
-          {
-            width: this.px2MM(1387),
-            align: 'center',
-          },
-        );
+      // pdf.image(
+      //   path.join(cwd, 'src/lib/shared/assets/images/icons/globe.png'),
+      //   this.px2MM(966.5),
+      //   this.px2MM(602),
+      //   { width: this.px2MM(32), height: this.px2MM(32) },
+      // );
+      // pdf
+      //   .font('LeagueSpartan-SemiBold')
+      //   .fontSize(this.px2MM(24))
+      //   .fillColor(this.hex2RGB('#FFFFFF'))
+      //   .text('https://1finance.co.in', this.px2MM(1014.5), this.px2MM(602), {
+      //     border: 0,
+      //     align: 'left',
+      //   });
+      // pdf
+      //   .font('LeagueSpartan-SemiBold')
+      //   .fontSize(this.px2MM(24))
+      //   .fillColor(this.hex2RGB('#FFFFFF'))
+      //   .text(
+      //     'Corresponding SEBI Local Office Address',
+      //     this.px2MM(230),
+      //     this.px2MM(674),
+      //     {
+      //       width: this.px2MM(1387),
+      //       align: 'center',
+      //       continued: true,
+      //       lineGap: this.px2MM(8),
+      //     },
+      //   )
+      //   .font('LeagueSpartan-Medium')
+      //   .text(
+      //     '\nSecurities and Exchange Board of India, Mumbai Regional Office, Mittal Court, A Wing, Gr. Floor, 224, Nariman Point, Mumbai - 400021',
+      //     {
+      //       width: this.px2MM(1387),
+      //       align: 'center',
+      //     },
+      //   );
 
-      pdf.image(
-        path.join(cwd, 'src/lib/shared/assets/images/icons/Line 3.png'),
-        this.px2MM(110),
-        this.px2MM(791),
-        { width: this.px2MM(1700), height: this.px2MM(0.02) },
-      );
+      // pdf.image(
+      //   path.join(cwd, 'src/lib/shared/assets/images/icons/Line 3.png'),
+      //   this.px2MM(110),
+      //   this.px2MM(791),
+      //   { width: this.px2MM(1700), height: this.px2MM(0.02) },
+      // );
 
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .text(
-          'CEO \nMr. Nitin Gupta\nEmail id : nitin@1finance.co.in\nContact No : +91 22 69120000',
-          this.px2MM(108),
-          this.px2MM(852),
-          {
-            width: this.px2MM(305),
-            align: 'center',
-            lineGap: this.px2MM(8),
-          },
-        );
+      // pdf
+      //   .font('LeagueSpartan-Regular')
+      //   .fontSize(this.px2MM(24))
+      //   .fillColor(this.hex2RGB('#FFFFFF'))
+      //   .text(
+      //     'CEO \nMr. Nitin Gupta\nEmail id : nitin@1finance.co.in\nContact No : +91 22 69120000',
+      //     this.px2MM(108),
+      //     this.px2MM(852),
+      //     {
+      //       width: this.px2MM(305),
+      //       align: 'center',
+      //       lineGap: this.px2MM(8),
+      //     },
+      //   );
 
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .text(
-          'Chef Technology Officer\nMr. Nikhil Bhosele \nEmail id :nikhil.bhosele@1finance.co.in\nContact No : +91 22 69121150',
-          this.px2MM(750),
-          this.px2MM(852),
-          {
-            width: this.px2MM(420),
-            align: 'center',
-            lineGap: this.px2MM(8),
-          },
-        );
+      // pdf
+      //   .font('LeagueSpartan-Regular')
+      //   .fontSize(this.px2MM(24))
+      //   .fillColor(this.hex2RGB('#FFFFFF'))
+      //   .text(
+      //     'Chef Technology Officer\nMr. Nikhil Bhosele \nEmail id :nikhil.bhosele@1finance.co.in\nContact No : +91 22 69121150',
+      //     this.px2MM(750),
+      //     this.px2MM(852),
+      //     {
+      //       width: this.px2MM(420),
+      //       align: 'center',
+      //       lineGap: this.px2MM(8),
+      //     },
+      //   );
 
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(24))
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        .text(
-          'Intern Developer \nRuthvik Salunkhe\n1 FINANCE PRIVATE LIMITED \nDate : Mon Apr 01 11:27:59 IST 2024',
-          this.px2MM(1459),
-          this.px2MM(852),
-          {
-            width: this.px2MM(354),
-            align: 'center',
-            lineGap: this.px2MM(8),
-          },
-        );
+      // pdf
+      //   .font('LeagueSpartan-Regular')
+      //   .fontSize(this.px2MM(24))
+      //   .fillColor(this.hex2RGB('#FFFFFF'))
+      //   .text(
+      //     'Intern Developer \nRuthvik Salunkhe\n1 FINANCE PRIVATE LIMITED \nDate : Mon Apr 01 11:27:59 IST 2024',
+      //     this.px2MM(1459),
+      //     this.px2MM(852),
+      //     {
+      //       width: this.px2MM(354),
+      //       align: 'center',
+      //       lineGap: this.px2MM(8),
+      //     },
+      //   );
 
       this.index_text(pdf, '#ffffff');
     } catch (error) {
@@ -4459,7 +3499,8 @@ export class FwpLatestService {
 
       // user_name =['name']
       const json_data = jsondata;
-      const user_name = jsondata?.meta?.name || '';
+      console.log(json_data);
+      const user_name = jsondata?.personal_info?.name || '';
 
       if (user_name?.trim() === '') {
         Logger.error('User name is empty');
@@ -4534,26 +3575,26 @@ export class FwpLatestService {
         .font('LeagueSpartan-SemiBold')
         .fontSize(this.px2MM(110))
         .fillColor(this.hex2RGB('#FFFFFF'))
-        .text('Financial Analysis', this.px2MM(120), this.px2MM(422));
+        .text('Tax Analysis', this.px2MM(120), this.px2MM(422));
 
       // Test of User name and Date
       let name_y = 680;
 
-      pdf
-        .font('LeagueSpartan-Regular')
-        .fontSize(this.px2MM(40))
-        .fillColor(this.hex2RGB('#FFFFFF'))
-        //TODO: Change the text to dynamic
-        .text(
-          '2nd Consultation Report',
-          this.px2MM(120),
-          this.px2MM(name_y + 16),
-          {
-            width: this.px2MM(1020),
-            lineGap: 4,
-            align: 'left',
-          },
-        );
+      // pdf
+      //   .font('LeagueSpartan-Regular')
+      //   .fontSize(this.px2MM(40))
+      //   .fillColor(this.hex2RGB('#FFFFFF'))
+      //   //TODO: Change the text to dynamic
+      //   .text(
+      //     '2nd Consultation Report',
+      //     this.px2MM(120),
+      //     this.px2MM(name_y + 16),
+      //     {
+      //       width: this.px2MM(1020),
+      //       lineGap: 4,
+      //       align: 'left',
+      //     },
+      //   );
 
       name_y = 820;
       pdf
@@ -4606,19 +3647,12 @@ export class FwpLatestService {
       this.oneView(pdf, jsondata);
 
 
-      await this.netWorth(pdf, jsondata);
+      await this.assetsChart(pdf, jsondata);
 
-      await this.liability_management(pdf, jsondata);
+      // await this.liabilitiesChart(pdf, jsondata);
+      // await this.liability_management(pdf, jsondata);
 
       await this.tax_liability_potential_saving(pdf, jsondata);
-
-      await this.tax_deduction_exemption(pdf, jsondata);
-
-
-      await this.tax_liability_potential_saving_page2(pdf, jsondata);
-
-
-      await this.disclaimer(pdf);
 
       this.last_page(pdf);
 

@@ -42,6 +42,7 @@
     "express-basic-auth": "^1.2.1",
     "fs": "^0.0.1-security",
     "moment": "^2.29.4",
+    "openai": "^4.68.4",
     "pandas-js": "^0.2.4",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.14.0",
