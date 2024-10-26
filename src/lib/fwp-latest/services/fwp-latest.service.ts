@@ -2123,6 +2123,8 @@ export class FwpLatestService {
       // user_name =['name']
       const json_data = jsondata;
       console.log(json_data);
+      console.log(json_data.personal_info, 'personal_info');
+      console.log(json_data.personal_info.name, 'personal_info name');
       const user_name = jsondata?.personal_info?.name || '';
 
       if (user_name?.trim() === '') {
@@ -2198,7 +2200,7 @@ export class FwpLatestService {
         .font('LeagueSpartan-SemiBold')
         .fontSize(this.px2MM(110))
         .fillColor(this.hex2RGB('#FFFFFF'))
-        .text('Tax Analysis', this.px2MM(120), this.px2MM(422));
+        .text('Tax Analysis Report', this.px2MM(120), this.px2MM(422));
 
       // Test of User name and Date
       let name_y = 680;

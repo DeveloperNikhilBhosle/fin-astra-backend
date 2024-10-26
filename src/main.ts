@@ -12,6 +12,9 @@ const path = require('path');
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
+  app.enableCors({
+    origin: 'http://localhost:4200', // Adjust to your Angular app's URL
+  });
   app.use(
     '/.well-known',
     express.static(path.join(__dirname, '..', '.well-known')),
@@ -25,6 +28,7 @@ async function bootstrap() {
     .setExternalDoc('Json Collection', '/api-json')
     .addBearerAuth()
     .build();
+
 
   //Bull Monitor
   //https://github.com/s-r-x/bull-monitor/tree/main/packages/express#usage

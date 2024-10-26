@@ -9,14 +9,15 @@ export class TaxSlabService {
 
     // Function to generate the prompt template
     private generateTaxSlabPrompt(text: string): string {
-        return `You are an AI assistant specialized in Indian tax regulations. Only respond to queries related to tax slabs. If the query is not related to tax slabs, respond with "This query is not related to tax slabs."
-Query: ${text}
+        return `You are an AI assistant specialized in Indian tax regulations. Only respond to every queries related to Tax. If the query is not related to indian tax regulatory, respond with "This query is not related to tax slabs."
+        Query: ${text}
+        Note: also dont use any special characters in response text e.g *,/,',$ etc, use \n for the new line
 Response:`
 
     }
 
     // Function to get tax slab suggestion
-    async getTaxSlabSuggestion(text: string): Promise<void> {
+    async getTaxSlabSuggestion(text: string) {
         const prompt = this.generateTaxSlabPrompt(text);
         const apiKey = 'AIzaSyDY-aWL5t7e8LT6rJOqiHvmtfFfXOszrGA';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
@@ -49,7 +50,9 @@ Response:`
                 // Write the HTML content to a file
                 // writeFileSync('tax_slab_suggestion.html', responseTxt, 'utf8');
                 // console.log('HTML content written to tax_slab_suggestion.html');
-                return responseTxt;
+                return {
+                    data: responseTxt
+                };
             } else {
                 console.error('No HTML content found in the response.');
             }
