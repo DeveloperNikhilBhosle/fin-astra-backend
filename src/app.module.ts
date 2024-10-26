@@ -4,8 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 
-import {
-} from './lib/index';
+import { TaxPlanningModule } from './lib/index';
 // import { PrismaModule } from './prisma/prisma.module';
 import { FwpLatestModule } from './lib/fwp-latest/fwp-latest.module';
 
@@ -14,8 +13,8 @@ import { FwpLatestModule } from './lib/fwp-latest/fwp-latest.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
     FwpLatestModule,
+    TaxPlanningModule,
   ],
   controllers: [AppController],
   providers: [
